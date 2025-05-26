@@ -15,7 +15,7 @@ import gdxpds
 from datetime import datetime
 
 # Optional: for trend computation, ensure the file exists
-from Temporary_backups.feature_construction_fm import compute_global_trend, compute_trend
+from RenewableEnergyLanguageModel.feature_construction_fm import compute_global_trend, compute_trend
 
 
 """

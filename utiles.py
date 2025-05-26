@@ -27,7 +27,7 @@ from datetime import datetime
 import os
 import pandas as pd
 
-from Temporary_backups.feature_construction_fm import compute_global_trend, compute_trend
+from RenewableEnergyLanguageModel.feature_construction_fm import compute_global_trend, compute_trend
 
 
 
@@ -199,6 +199,9 @@ def process_all_results_scenarios(scenarios, results_folder):
 
     # Get result scenario suffixes (without Results_ and .gdx)
     valid_scenario_suffixes = get_available_results_scenarios(results_folder)
+    
+   
+    
     print(f"Found {len(valid_scenario_suffixes)} valid result scenarios.")
 
     required_keys = ['costMargFMs', 'costInvFMs', 'FMsgrowth', 'ghgFMs', 'costInvLevelFMs']
@@ -223,6 +226,107 @@ def process_all_results_scenarios(scenarios, results_folder):
 
     print("\nFinished processing all valid Results scenarios.")
     return merged_feature_arrays
+
+
+##########################################################
+
+
+
+
+def process_agri_scenario(scenario_name, datasets_dict):
+    """
+    Process a single scenario: apply compute_trend, merge all features, fill missing with 0.
+    """
+   
+    
+    # === Feature extraction for Region-Technology datasets ===
+    costMarg_features       = compute_trend(datasets_dict["costMargAgri"], "Cost", "CostMargAgri")
+    costInv_features        = compute_trend(datasets_dict["costInvAgri"], "InvestmentCost", "CostInvAgri")
+    costInvLevel_features   = compute_trend(datasets_dict["costInvLevelAgri"], "InvestmentLevelCost", "CostInvLevAgri")
+    ghg_features            = compute_trend(datasets_dict["ghgAgri"], "GHG_Removal", "GHGAgri")
+    growth_features         = compute_trend(datasets_dict["Agrigrowth"], "Agri_Growth", "AgriGrowth")
+    
+    # === Merge all Region-Technology feature sets ===
+    final_feature_array = (
+        costMarg_features
+        .merge(costInv_features, on=["Region", "Technology"], how="outer")
+        .merge(costInvLevel_features, on=["Region", "Technology"], how="outer")
+        .merge(ghg_features, on=["Region", "Technology"], how="outer")
+        .merge(growth_features, on=["Region", "Technology"], how="outer")
+    )
+                                           
+                                           
+                                           
+                                           
+
+    final_feature_array.fillna(0, inplace=True)
+
+    return final_feature_array
+
+
+
+
+
+
+def process_all_results_agri_scenarios(scenarios, results_folder):
+    """
+    Process all scenarios which have corresponding Results_*.gdx file (by suffix match).
+    For each scenario, processes whatever keys are present, warning for missing keys.
+    Returns a dict mapping scenario_suffix to final_feature_array.
+    """
+    merged_feature_arrays = {}
+
+    # Get result scenario suffixes (without Results_ and .gdx)
+    valid_scenario_suffixes = get_available_results_scenarios(results_folder)
+    print(f"Found {len(valid_scenario_suffixes)} valid result scenarios.")
+
+    required_keys = ['costMargAgri', 'costInvAgri', 'costInvLevelAgri', 'ghgAgri', 'Agrigrowth']
+    
+    print("8888888888888888888888888")
+    print(valid_scenario_suffixes)
+    print("8888888888888888888888888")
+    
+    for scenario_suffix in valid_scenario_suffixes:
+
+        if scenario_suffix not in scenarios:
+            print(f" -> Skipping {scenario_suffix} (not in loaded scenarios)")
+            continue
+
+        datasets_dict = scenarios[scenario_suffix]
+        available_keys = list(datasets_dict.keys())
+        missing_keys = [key for key in required_keys if key not in datasets_dict]
+
+        if missing_keys:
+            print(f" -> WARNING: {scenario_suffix} is missing {missing_keys} (only has {available_keys}), processing anyway.")
+        else:
+            print(f"Processing scenario: {scenario_suffix} (all required keys present)")
+
+        # Optional: Only process scenarios with at least N available datasets
+        # min_keys_required = 3
+        # if sum(key in datasets_dict for key in required_keys) < min_keys_required:
+        #     print(f" -> Skipping {scenario_suffix} (less than {min_keys_required} datasets present)")
+        #     continue
+
+        # Process and store
+        final_feature_array = process_agri_scenario(scenario_suffix, datasets_dict)
+        merged_feature_arrays[scenario_suffix] = final_feature_array
+
+    print("\nFinished processing all valid Results scenarios.")
+    return merged_feature_arrays
+
+
+
+
+
+
+
+#######################################################
+
+
+
+
+
+
 
 
 # === Example usage ===

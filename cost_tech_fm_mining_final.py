@@ -27,8 +27,8 @@ import numpy as np
 ###########################################################
 
 
-from Temporary_backups.scenario_generator import GDXScaler
-from Temporary_backups.feature_construction_fm import compute_global_trend, compute_trend
+from RenewableEnergyLanguageModel.scenario_generator import GDXScaler
+from RenewableEnergyLanguageModel.feature_construction_fm import compute_global_trend, compute_trend
 
 
 """  
@@ -72,7 +72,7 @@ gdx_data = gdxpds.to_dataframes(gdx_base_file)
 Extracting required variables for doing simulations
 """
 
-from Temporary_backups.loading_saving_parms_from_gdx_csv import load_and_save_selected_symbols
+from RenewableEnergyLanguageModel.loading_saving_parms_from_gdx_csv import load_and_save_selected_symbols
 
 
 
@@ -88,7 +88,7 @@ load_and_save_selected_symbols(gdx_dir, target_symbols, save_path=save_dir)
 
 
 
-from Temporary_backups.utiles import load_and_rename_csvs, get_dynamic_rename_mapping_fixed
+from RenewableEnergyLanguageModel.utiles import load_and_rename_csvs, get_dynamic_rename_mapping_fixed
 
 
 
@@ -110,19 +110,12 @@ import pandas as pd
 
 # Apply dynamic renaming and convert "Year" to numeric
 for key, df in datasets.items():
-    print(key)
-    print(df)
-    #print("+++++++++++++++++++++++++++")
     rename_dict = get_dynamic_rename_mapping_fixed(key)
     if rename_dict:
         df.rename(columns=rename_dict, inplace=True)
     if "Year" in df.columns:
         df["Year"] = pd.to_numeric(df["Year"], errors='coerce')
         
-    
-
-
-
 
 
 print(datasets)
@@ -149,7 +142,7 @@ for key in datasets.keys():
 
 # === EXAMPLE USAGE ===
 
-from Temporary_backups.scenario_generator import build_scenario_hierarchy
+from RenewableEnergyLanguageModel.scenario_generator import build_scenario_hierarchy
 
 
 scenarios = build_scenario_hierarchy(datasets)
@@ -188,13 +181,13 @@ gams_system_dir = setting_directory(0)  # Example path for Windows
 
 
 
-from Temporary_backups.utiles import process_all_results_scenarios
+from RenewableEnergyLanguageModel.utiles import process_all_results_scenarios
 
 # === Example usage ===
 
 gdx_file = gams_system_dir + "/scenarios_neg_emi/"
 
-results_folder = gdx_file + "/Results_dataset_scenarios"  # <<<< your folder with Results_*.gdx
+results_folder = gdx_file + "Results_dataset_scenarios"  # <<<< your folder with Results_*.gdx
 
 #results_folder = "gdx_file"
 
@@ -217,7 +210,7 @@ for scenario, df in merged_feature_arrays.items():
 Done enhancing all scenarios with CO2 and GHG trend features.
 """
 
-from Temporary_backups.utiles import enhance_with_global_trends_from_scenarios, enhance_with_region_level_features
+from RenewableEnergyLanguageModel.utiles import enhance_with_global_trends_from_scenarios, enhance_with_region_level_features
 
 
 enhanced_merged_feature_arrays = enhance_with_global_trends_from_scenarios(merged_feature_arrays, scenarios)
@@ -265,7 +258,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from Temporary_backups.gdx_to_csv_function import extract_gdx_results, build_input_output_pairs
+from RenewableEnergyLanguageModel.gdx_to_csv_function import extract_gdx_results, build_input_output_pairs
 
 
 #gdx_filename: str, output_dir: str, sub_dir: str
@@ -273,7 +266,7 @@ from Temporary_backups.gdx_to_csv_function import extract_gdx_results, build_inp
 
 # Parameters
 results_folder = gams_system_dir + "/scenarios_neg_emi/Results_dataset_scenarios"
-output_dir = gams_system_dir + "/Temporary_backups/data"
+output_dir = gams_system_dir + "/RenewableEnergyLanguageModel/data"
 
 
 
@@ -284,7 +277,7 @@ import pandas as pd
 
 # Define paths
 results_folder = os.path.join(gams_system_dir, "scenarios_neg_emi/Results_dataset_scenarios")
-output_root = os.path.join(gams_system_dir, "Temporary_backups/data")
+output_root = os.path.join(gams_system_dir, "RenewableEnergyLanguageModel/data")
 
 # Get all scenario suffixes from available GDX result files
 def get_available_results_scenarios(results_folder):
@@ -362,10 +355,10 @@ PCA
 """
 
 
-from Temporary_backups.utiles import parse_scenario_keys, replace_dict_keys
-from Temporary_backups.llm_scenario_query import interpret_stakeholder_query_with_prompt
+from RenewableEnergyLanguageModel.utiles import parse_scenario_keys, replace_dict_keys
+from RenewableEnergyLanguageModel.llm_scenario_query import interpret_stakeholder_query_with_prompt
 
-from Temporary_backups.correlations_module import (plot_scenario_correlations,
+from RenewableEnergyLanguageModel.correlations_module import (plot_scenario_correlations,
                                                    plot_scenario_dendrogram,
                                                    find_most_and_least_similar_scenarios,
                                                    plot_costTechFMs_correlation,
@@ -476,7 +469,9 @@ print(response.choices[0].message.content)
 
 
 
-
+"""
+END OF THIS Module!!! Furthur ANALYSIS WILL BE FOR OTHER VARIABLES
+"""
 
 
 
@@ -488,6 +483,13 @@ print(response.choices[0].message.content)
 ###################################################################################
 
 
+
+
+
+###################################################################################
+###################################################################################
+###################################################################################
+###################################################################################
 
 
 pca_projection(fully_enhanced_arrays_aliased , value_column=None, title="PCA of Input Features (fully_enhanced_arrays)")
@@ -683,7 +685,7 @@ print(labels)  # 1D array, one cluster label per scenario (order matches scenari
 #############################################
 
 
-from Temporary_backups.random_forest_module import (train_and_predict_capFMs,
+from RenewableEnergyLanguageModel.random_forest_module import (train_and_predict_capFMs,
                                                     train_and_predict_costTechFMs_ensemble,
                                                     compute_ensemble_shap)
 

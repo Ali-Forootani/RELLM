@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 from pyomo.environ import *
-from gams import GamsWorkspace, GamsParameter, GamsSet
+#from gams import GamsWorkspace, GamsParameter, GamsSet
 import os
 import sys
 import json
