@@ -1,0 +1,8 @@
+[CHART]
+VERID=GAMSIDE Chart(s) V1
+GDXFILE=ali_carbonPrice_halftimes.gdx
+TITLE=scenario_hlaftimesCO2price
+
+[SERIES1]
+SYMBOL=scenario_hlaftimesCO2price
+TYPE=line
