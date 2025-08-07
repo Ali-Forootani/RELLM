@@ -12,9 +12,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from pyomo.environ import *
-from gams import GamsWorkspace, GamsParameter, GamsSet
-from gams import GamsWorkspace
+#from pyomo.environ import *
+#from gams import GamsWorkspace, GamsParameter, GamsSet
+#from gams import GamsWorkspace
 import os
 
 import sys
@@ -35,176 +35,6 @@ def setting_directory(depth):
 gams_system_dir = setting_directory(0)  # Example path for Windows
 
 
-# Load the .gdx file
-## pip install gamsapi[transfer]==xx.y.z
-### xx.y.z represents your installed GAMS version number (e.g., 47.6.0)
-
-"""
-gdx_file = gams_system_dir + "/test_Ali.gdx"  # Change this to the actual path of your GDX file
-gdx_data = gdxpds.to_dataframes(gdx_file)
-
-# Extract relevant data into Pandas DataFrames
-costMargFMs_df = gdx_data['costMargFMs']
-costInvFMs_df = gdx_data['costInvFMs']
-costInvLevelFMs_df = gdx_data['costInvLevelFMs']
-ghgFMs_df = gdx_data['ghgFMs']
-FMsgrowth_df = gdx_data['FMsgrowth']
-BeechArea0_df = gdx_data['BeechArea0']
-GrassArea0_df = gdx_data['GrassArea0']
-ghgTargetLULUCF_df = gdx_data['ghgTargetLULUCF']
-CO2price_df = gdx_data['CO2price']
-
-
-
-# Save to CSV for further analysis (optional)
-costMargFMs_df.to_csv("costMargFMs.csv", index=False)
-costInvFMs_df.to_csv("costInvFMs.csv", index=False)
-costInvLevelFMs_df.to_csv("costInvLevelFMs.csv", index=False)
-ghgFMs_df.to_csv("ghgFMs.csv", index=False)
-FMsgrowth_df.to_csv("FMsgrowth.csv", index=False)
-BeechArea0_df.to_csv("BeechArea0.csv", index=False)
-GrassArea0_df.to_csv("GrassArea0.csv", index=False)
-ghgTargetLULUCF_df.to_csv("ghgTargetLULUCF.csv", index=False)
-CO2price_df.to_csv("CO2price.csv", index=False)
-CO2price_df = CO2price_df.rename(columns={"*": "year", "Value": "CO2price"})
-"""
-
-#############################################################
-#############################################################
-#############################################################
-#############################################################
-
-"""
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-
-# Load datasets from CSV
-datasets = {
-    "costMargFMs": pd.read_csv(gams_system_dir + "/data/" + "costMargFMs.csv"),
-    "costInvFMs": pd.read_csv(gams_system_dir + "/data/" +"costInvFMs.csv"),
-    "costInvLevelFMs": pd.read_csv(gams_system_dir + "/data/" +"costInvLevelFMs.csv"),
-    "ghgFMs": pd.read_csv(gams_system_dir + "/data/" +"ghgFMs.csv"),
-    "FMsgrowth": pd.read_csv(gams_system_dir + "/data/" +"FMsgrowth.csv"),
-    "BeechArea0": pd.read_csv(gams_system_dir + "/data/" +"BeechArea0.csv"),
-    "GrassArea0": pd.read_csv(gams_system_dir + "/data/" +"GrassArea0.csv"),
-    "ghgTargetLULUCF": pd.read_csv(gams_system_dir + "/data/" +"ghgTargetLULUCF.csv"),
-    "CO2price": pd.read_csv(gams_system_dir + "/data/" +"CO2price.csv")
-}
-
-# Rename columns to ensure consistency
-rename_columns = {
-    "costMargFMs": {"*": "Year", "*.1": "Technology", "*.2": "Region", "Value": "Cost"},
-    "costInvFMs": {"*": "Year", "*.1": "Technology", "*.2": "Region", "Value": "InvestmentCost"},
-    "costInvLevelFMs": {"*": "Year", "*.1": "Technology", "*.2": "Region", "Value": "InvestmentLevelCost"},
-    "ghgFMs": {"*": "Year", "*.1": "Technology", "*.2": "Region", "Value": "GHG_Removal"},
-    "FMsgrowth": {"*": "Year", "*.1": "Technology", "*.2": "Region", "Value": "ForestManagementGrowth"},
-    "BeechArea0": {"*": "Year", "*.1": "Region", "Value": "InitialBeechArea"},
-    "GrassArea0": {"*": "Year", "*.1": "Region", "Value": "InitialGrassArea"},
-    "ghgTargetLULUCF": {"*": "Year", "Value": "GHG_Target_LULUCF"},
-    "CO2price": {"*": "Year", "Value": "CO2_Price"}
-}
-
-# Apply renaming and ensure Year is numeric
-for key, df in datasets.items():
-    df.rename(columns=rename_columns[key], inplace=True)
-    df["Year"] = pd.to_numeric(df["Year"], errors='coerce')
-
-# Special Handling for BeechArea0 and GrassArea0
-if "BeechArea0" in datasets and "GrassArea0" in datasets:
-    beech_df = datasets["BeechArea0"].sort_values(by="InitialBeechArea", ascending=True)
-    grass_df = datasets["GrassArea0"].sort_values(by="InitialGrassArea", ascending=True)
-
-    # Define figure size
-    fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(16, 6), sharey=True)
-
-    # Plot Initial Beech Area
-    axes[0].barh(beech_df["Region"], beech_df["InitialBeechArea"], color="forestgreen")
-    axes[0].set_xlabel("Initial Beech Area")
-    axes[0].set_ylabel("Region")
-    axes[0].set_title("Initial Beech Area by Region (2020)")
-
-    # Plot Initial Grass Area
-    axes[1].barh(grass_df["Region"], grass_df["InitialGrassArea"], color="goldenrod")
-    axes[1].set_xlabel("Initial Grass Area")
-    axes[1].set_title("Initial Grass Area by Region (2020)")
-
-    # Adjust layout
-    plt.tight_layout()
-    plt.show()
-
-"""
-
-##############################################
-##############################################
-##############################################
-
-"""
-import matplotlib.pyplot as plt
-import seaborn as sns
-import matplotlib.ticker as mtick
-
-# Set global seaborn and matplotlib style
-sns.set_theme(style="whitegrid")  # This handles the styling; no need for plt.style.use
-plt.rcParams.update({
-    "figure.dpi": 350,
-    "axes.titlesize": 20,
-    "axes.labelsize": 16,
-    "xtick.labelsize": 14,
-    "ytick.labelsize": 14,
-    "legend.fontsize": 12,
-    "legend.title_fontsize": 14,
-    "lines.linewidth": 2,
-    "lines.markersize": 8,
-    "axes.spines.right": False,
-    "axes.spines.top": False,
-    "font.family": "sans-serif",
-    "font.sans-serif": "DejaVu Sans",  # Reliable cross-platform font
-})
-plt.style.use("ggplot")
-# Plot other datasets
-for key, df in datasets.items():
-    if key in ["BeechArea0", "GrassArea0"]:
-        continue  # Skip bar plots if handled separately
-
-    plt.figure(figsize=(12, 8))
-
-    # Time-series datasets using line plots
-    if "Region" in df.columns and "Technology" in df.columns:
-        sns.lineplot(
-            data=df, x="Year", y=df.columns[-1],
-            hue="Region", style="Technology",
-            markers=True, dashes=False
-        )
-        plt.legend(title="Region / Technology", bbox_to_anchor=(1.02, 1), loc='upper left', frameon=True, shadow=True)
-
-    elif "Region" in df.columns:
-        sns.lineplot(
-            data=df, x="Year", y=df.columns[-1],
-            hue="Region", markers=True
-        )
-        plt.legend(title="Region", bbox_to_anchor=(1.02, 1), loc='upper left', frameon=True, shadow=True)
-
-    else:
-        sns.lineplot(
-            data=df, x="Year", y=df.columns[-1],
-            marker="o"
-        )
-
-    #plt.xlabel("Year", labelpad=10)
-    #plt.ylabel(f"{df.columns[-1]} Value", labelpad=10)
-    
-    plt.xlabel("Year", labelpad=10, fontsize=16)  # Adjust font size here
-    plt.ylabel(f"{df.columns[-1]} Value", labelpad=10, fontsize=16)
-
-    
-    
-    plt.title(f"{key} Evolution Over Time", pad=15)
-    plt.grid(True, linestyle='--', alpha=0.6)
-    plt.tight_layout()
-    plt.show()
-"""
-
 ##############################################
 ##############################################
 ##############################################
@@ -214,25 +44,25 @@ for key, df in datasets.items():
 Input data
 """
 
-
+"""
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# Load datasets from CSV
+# ---- Load datasets from CSV ----
 datasets = {
-    "costMargFMs": pd.read_csv(gams_system_dir + "/data/" + "costMargFMs.csv"),
-    "costInvFMs": pd.read_csv(gams_system_dir + "/data/" +"costInvFMs.csv"),
-    "costInvLevelFMs": pd.read_csv(gams_system_dir + "/data/" +"costInvLevelFMs.csv"),
-    "ghgFMs": pd.read_csv(gams_system_dir + "/data/" +"ghgFMs.csv"),
-    "FMsgrowth": pd.read_csv(gams_system_dir + "/data/" +"FMsgrowth.csv"),
-    "BeechArea0": pd.read_csv(gams_system_dir + "/data/" +"BeechArea0.csv"),
-    "GrassArea0": pd.read_csv(gams_system_dir + "/data/" +"GrassArea0.csv"),
-    "ghgTargetLULUCF": pd.read_csv(gams_system_dir + "/data/" +"ghgTargetLULUCF.csv"),
-    "CO2price": pd.read_csv(gams_system_dir + "/data/" +"CO2price.csv")
+    "costMargFMs": pd.read_csv(gams_system_dir + "/scenarios_neg_emi/csv_outputs/" + "costMargFMs_base_scenario.csv"),
+    "costInvFMs": pd.read_csv(gams_system_dir + "/scenarios_neg_emi/csv_outputs/" +"costInvFMs_base_scenario.csv"),
+    "costInvLevelFMs": pd.read_csv(gams_system_dir + "/scenarios_neg_emi/csv_outputs/" +"costInvLevelFMs_base_scenario.csv"),
+    "ghgFMs": pd.read_csv(gams_system_dir + "/scenarios_neg_emi/csv_outputs/" +"ghgFMs_base_scenario.csv"),
+    "FMsgrowth": pd.read_csv(gams_system_dir + "/scenarios_neg_emi/csv_outputs/" +"FMsgrowth_base_scenario.csv"),
+    "BeechArea0": pd.read_csv(gams_system_dir + "/scenarios_neg_emi/csv_outputs/" +"BeechArea0_base_scenario.csv"),
+    "GrassArea0": pd.read_csv(gams_system_dir + "/scenarios_neg_emi/csv_outputs/" +"GrassArea0_base_scenario.csv"),
+    "ghgTargetLULUCF": pd.read_csv(gams_system_dir + "/scenarios_neg_emi/csv_outputs/" +"ghgTargetLULUCF_base_scenario.csv"),
+    "CO2price": pd.read_csv(gams_system_dir + "/scenarios_neg_emi/csv_outputs/" +"CO2price_base_scenario.csv")
 }
 
-# Rename columns to ensure consistency
+# ---- Rename columns to ensure consistency ----
 rename_columns = {
     "costMargFMs": {"*": "Year", "*.1": "Technology", "*.2": "Region", "Value": "Cost"},
     "costInvFMs": {"*": "Year", "*.1": "Technology", "*.2": "Region", "Value": "InvestmentCost"},
@@ -244,17 +74,14 @@ rename_columns = {
     "ghgTargetLULUCF": {"*": "Year", "Value": "GHG_Target_LULUCF"},
     "CO2price": {"*": "Year", "Value": "CO2_Price"}
 }
-
 for key, df in datasets.items():
     df.rename(columns=rename_columns[key], inplace=True)
     df["Year"] = pd.to_numeric(df["Year"], errors='coerce')
 
-# Set global plot style
+# ---- Set global plot style ----
 sns.set_theme(style="whitegrid")
-#plt.style.use("ggplot")
-
 plt.rcParams.update({
-    "figure.dpi": 350,
+    "figure.dpi": 600,
     "axes.titlesize": 20,
     "axes.labelsize": 16,
     "xtick.labelsize": 14,
@@ -267,15 +94,15 @@ plt.rcParams.update({
     "axes.spines.top": False,
     "font.family": "sans-serif",
     "font.sans-serif": "DejaVu Sans",
-    #"text.usetex": True  # Uncomment if full LaTeX rendering is desired
+    # "text.usetex": True,  # Uncomment for LaTeX rendering (if LaTeX is installed)
 })
 
-# LaTeX-style label mapping
+# ---- LaTeX-style label and title mapping ----
 pretty_labels = {
     "costMargFMs": r"$\mathrm{Marginal\ Cost\ of\ FMs}$",
     "costInvFMs": r"$\mathrm{Investment\ Cost\ of\ FMs}$",
     "costInvLevelFMs": r"$\mathrm{Investment\ Level\ Cost\ of\ FMs}$",
-    "ghgFMs": r"$\mathrm{GHG\ Removals\ by\ FMs}$",
+    "ghgFMs": r"$\mathrm{Green House Gases (GHG) \ Removals\ by\ FMs}$",
     "FMsgrowth": r"$\mathrm{Forest\ Management\ Growth}$",
     "GHG_Removal": r"$\mathrm{GHG\ Removal\ (MtCO_2)}$",
     "InvestmentCost": r"$\mathrm{Investment\ Cost\ (€)}$",
@@ -288,7 +115,19 @@ pretty_labels = {
     "InitialGrassArea": r"$\mathrm{Initial\ Grass\ Area\ (ha)}$"
 }
 
-# Special bar plots
+# Use this dict to map keys to pretty LaTeX titles for time series plots
+pretty_titles = {
+    "CO2price": r"$\mathrm{CO_2\ Price\ Evolution\ Over\ Time}$",
+    "ghgTargetLULUCF": r"$\mathrm{GHG\ Target\ LULUCF\ Evolution\ Over\ Time}$",
+    "costMargFMs": r"$\mathrm{Marginal\ Cost\ of\ FMs\ Evolution}$",
+    "costInvFMs": r"$\mathrm{Investment\ Cost\ of\ FMs\ Evolution}$",
+    "costInvLevelFMs": r"$\mathrm{Investment\ Level\ Cost\ of\ FMs\ Evolution}$",
+    "ghgFMs": r"$\mathrm{GHG\ Removals\ by\ FMs\ Evolution}$",
+    "FMsgrowth": r"$\mathrm{Forest\ Management\ Growth\ Evolution}$",
+    # ... add more as needed ...
+}
+
+# ---- Special bar plots for Initial Beech/Grass Area ----
 if "BeechArea0" in datasets and "GrassArea0" in datasets:
     beech_df = datasets["BeechArea0"].sort_values(by="InitialBeechArea", ascending=True)
     grass_df = datasets["GrassArea0"].sort_values(by="InitialGrassArea", ascending=True)
@@ -307,7 +146,7 @@ if "BeechArea0" in datasets and "GrassArea0" in datasets:
     plt.tight_layout()
     plt.show()
 
-# Time-series line plots
+# ---- Time-series line plots (with LaTeX titles!) ----
 for key, df in datasets.items():
     if key in ["BeechArea0", "GrassArea0"]:
         continue  # Already handled
@@ -315,8 +154,9 @@ for key, df in datasets.items():
     plt.figure(figsize=(12, 8))
     y_col = df.columns[-1]
     ylabel = pretty_labels.get(y_col, y_col)
-    title = pretty_labels.get(key, key)
+    title = pretty_titles.get(key, pretty_labels.get(key, key))
 
+    # Multi-region/multi-tech handling
     if "Region" in df.columns and "Technology" in df.columns:
         sns.lineplot(
             data=df, x="Year", y=y_col,
@@ -324,14 +164,12 @@ for key, df in datasets.items():
             markers=True, dashes=False
         )
         plt.legend(title="Region / Technology", bbox_to_anchor=(1.02, 1), loc='upper left', frameon=True, shadow=True)
-
     elif "Region" in df.columns:
         sns.lineplot(
             data=df, x="Year", y=y_col,
             hue="Region", markers=True
         )
         plt.legend(title="Region", bbox_to_anchor=(1.02, 1), loc='upper left', frameon=True, shadow=True)
-
     else:
         sns.lineplot(
             data=df, x="Year", y=y_col,
@@ -340,19 +178,235 @@ for key, df in datasets.items():
 
     plt.xlabel(r"$\mathrm{Year}$", fontsize=16)
     plt.ylabel(ylabel, fontsize=16)
-    plt.title(title + r" $\mathrm{Evolution\ Over\ Time}$", fontsize=20, pad=15)
+    plt.title(title, fontsize=20, pad=15)
     plt.grid(True, linestyle='--', alpha=0.6)
     plt.tight_layout()
     plt.show()
 
 
+"""
 
-##############################################
-##############################################
-##############################################
-##############################################
-##############################################
 
+
+
+#############################################################
+
+
+
+import os
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import matplotlib.ticker as mticker
+
+
+# ---- Create output folder for plots ----
+output_dir = "plots"
+os.makedirs(output_dir, exist_ok=True)
+
+# ---- Load datasets from CSV ----
+datasets = {
+    "costMargFMs": pd.read_csv(gams_system_dir + "/scenarios_neg_emi/csv_outputs/" + "costMargFMs_base_scenario.csv"),
+    "costInvFMs": pd.read_csv(gams_system_dir + "/scenarios_neg_emi/csv_outputs/" +"costInvFMs_base_scenario.csv"),
+    "costInvLevelFMs": pd.read_csv(gams_system_dir + "/scenarios_neg_emi/csv_outputs/" +"costInvLevelFMs_base_scenario.csv"),
+    "ghgFMs": pd.read_csv(gams_system_dir + "/scenarios_neg_emi/csv_outputs/" +"ghgFMs_base_scenario.csv"),
+    "FMsgrowth": pd.read_csv(gams_system_dir + "/scenarios_neg_emi/csv_outputs/" +"FMsgrowth_base_scenario.csv"),
+    "BeechArea0": pd.read_csv(gams_system_dir + "/scenarios_neg_emi/csv_outputs/" +"BeechArea0_base_scenario.csv"),
+    "GrassArea0": pd.read_csv(gams_system_dir + "/scenarios_neg_emi/csv_outputs/" +"GrassArea0_base_scenario.csv"),
+    "ghgTargetLULUCF": pd.read_csv(gams_system_dir + "/scenarios_neg_emi/csv_outputs/" +"ghgTargetLULUCF_base_scenario.csv"),
+    "CO2price": pd.read_csv(gams_system_dir + "/scenarios_neg_emi/csv_outputs/" +"CO2price_base_scenario.csv")
+}
+
+# ---- Rename columns to ensure consistency ----
+rename_columns = {
+    "costMargFMs": {"*": "Year", "*.1": "Technology", "*.2": "Region", "Value": "Cost"},
+    "costInvFMs": {"*": "Year", "*.1": "Technology", "*.2": "Region", "Value": "InvestmentCost"},
+    "costInvLevelFMs": {"*": "Year", "*.1": "Technology", "*.2": "Region", "Value": "InvestmentLevelCost"},
+    "ghgFMs": {"*": "Year", "*.1": "Technology", "*.2": "Region", "Value": "GHG_Removal"},
+    "FMsgrowth": {"*": "Year", "*.1": "Technology", "*.2": "Region", "Value": "ForestManagementGrowth"},
+    "BeechArea0": {"*": "Year", "*.1": "Region", "Value": "InitialBeechArea"},
+    "GrassArea0": {"*": "Year", "*.1": "Region", "Value": "InitialGrassArea"},
+    "ghgTargetLULUCF": {"*": "Year", "Value": "GHG_Target_LULUCF"},
+    "CO2price": {"*": "Year", "Value": "CO2_Price"}
+}
+for key, df in datasets.items():
+    df.rename(columns=rename_columns[key], inplace=True)
+    df["Year"] = pd.to_numeric(df["Year"], errors='coerce')
+
+# ---- Set global plot style ----
+sns.set_theme(style="whitegrid")
+plt.rcParams.update({
+    "figure.dpi": 600,
+    "axes.titlesize": 20,
+    "axes.labelsize": 22,
+    "xtick.labelsize": 18,
+    "ytick.labelsize": 18,
+    "legend.fontsize": 14,
+    "legend.title_fontsize": 16,
+    "lines.linewidth": 3,
+    "lines.markersize": 10,
+    "axes.spines.right": False,
+    "axes.spines.top": False,
+    "font.family": "sans-serif",
+    "font.sans-serif": "DejaVu Sans",
+    # "text.usetex": True,  # Uncomment for LaTeX rendering (if LaTeX is installed)
+})
+
+pretty_labels = {
+    "costMargFMs": r"$\mathrm{Marginal\ Cost\ of\ Forest\ Management\ (FMs)}$",
+    "costInvFMs": r"$\mathrm{Investment\ Cost\ of\ Forest\ Management\ (FMs)}$",
+    "costInvLevelFMs": r"$\mathrm{Investment\ Level\ Cost\ of\ Forest\ Management\ (FMs)}$",
+    "ghgFMs": r"$\mathrm{Green House Gases\ (GHG) \ Removals\ by\ Forest\ Management\ (FMs)}$",
+    "FMsgrowth": r"$\mathrm{Forest\ Management\ (FM)\ Growth}$",
+    "GHG_Removal": r"$\mathrm{GHG\ Removal\ (MtCO_2)}$",
+    "InvestmentCost": r"$\mathrm{Investment\ Cost\ (€)}$",
+    "InvestmentLevelCost": r"$\mathrm{Investment\ Level\ Cost\ (€)}$",
+    "ForestManagementGrowth": r"$\mathrm{Forest\ Managements\ (FMs)\ Growth\ (ha)}$",
+    "Cost": r"$\mathrm{Marginal\ Cost\ (€ / tCO_2)}$",
+    "GHG_Target_LULUCF": r"$\mathrm{Green\ House\ Gas\ (GHG)\ Target\ LULUCF\ (MtCO_2)}$",
+    "CO2_Price": r"$\mathrm{CO_2\ Price\ (€ / tCO_2)}$",
+    "InitialBeechArea": r"$\mathrm{Initial\ Beech\ Area\ (ha)}$",
+    "InitialGrassArea": r"$\mathrm{Initial\ Grass\ Area\ (ha)}$"
+}
+
+pretty_titles = {
+    "CO2price": r"$\mathrm{CO_2\ Price\ Evolution\ Over\ Time}$",
+    "ghgTargetLULUCF": r"$\mathrm{GHG\ Target\ LULUCF\ Evolution\ Over\ Time}$",
+    "costMargFMs": r"$\mathrm{Marginal\ Cost\ of\ Forest Managements\ (FMs)\ Evolution}$",
+    "costInvFMs": r"$\mathrm{Investment\ Cost\ of\ Forest Managements\ (FMs)\ Evolution}$",
+    "costInvLevelFMs": r"$\mathrm{Investment\ Level\ Cost\ of\ Forest\ Management\ (FMs)\ Evolution}$",
+    "ghgFMs": r"$\mathrm{Green\ House\ Gas\ (GHG)\ Removals\ by\ FMs\ Evolution}$",
+    "FMsgrowth": r"$\mathrm{Forest\ Management (FM)\ Growth\ Evolution}$",
+    # ... add more as needed ...
+}
+
+# ---- Special bar plots for Initial Beech/Grass Area ----
+if "BeechArea0" in datasets and "GrassArea0" in datasets:
+    beech_df = datasets["BeechArea0"].sort_values(by="InitialBeechArea", ascending=True)
+    grass_df = datasets["GrassArea0"].sort_values(by="InitialGrassArea", ascending=True)
+
+    fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(15, 7), sharey=True)
+
+    axes[0].barh(beech_df["Region"], beech_df["InitialBeechArea"], color="forestgreen")
+    axes[0].set_xlabel(pretty_labels["InitialBeechArea"])
+    axes[0].set_ylabel("Region")
+    axes[0].set_title(r"$\mathrm{Initial\ Beech\ Area\ by\ Region\ (2020)}$")
+
+    axes[1].barh(grass_df["Region"], grass_df["InitialGrassArea"], color="goldenrod")
+    axes[1].set_xlabel(pretty_labels["InitialGrassArea"])
+    axes[1].set_title(r"$\mathrm{Initial\ Grass\ Area\ by\ Region\ (2020)}$")
+    
+    
+    # Set font size for ticks
+    for ax in axes:
+        ax.tick_params(axis='x', labelsize=15)
+        ax.tick_params(axis='y', labelsize=15)
+
+        # Scientific notation for x-axis
+        formatter = mticker.ScalarFormatter(useMathText=True)
+        formatter.set_scientific(True)
+        formatter.set_powerlimits((-2, 2))  # Scientific if < 0.01 or > 100
+        ax.xaxis.set_major_formatter(formatter)
+
+    plt.tight_layout()
+    fig.savefig(os.path.join(output_dir, "InitialBeechArea_GrassArea.png"), dpi=600, bbox_inches="tight")
+    fig.savefig(os.path.join(output_dir, "InitialBeechArea_GrassArea.pdf"), dpi=600, bbox_inches="tight")
+    plt.close(fig)  # Close so next plots don't overlap
+
+# ---- Time-series line plots (with LaTeX titles!) ----
+for key, df in datasets.items():
+    if key in ["BeechArea0", "GrassArea0"]:
+        continue  # Already handled
+
+    plt.figure(figsize=(12, 9))
+    y_col = df.columns[-1]
+    ylabel = pretty_labels.get(y_col, y_col)
+    title = pretty_titles.get(key, pretty_labels.get(key, key))
+
+    if "Region" in df.columns and "Technology" in df.columns:
+        sns.lineplot(
+            data=df, x="Year", y=y_col,
+            hue="Region", style="Technology",
+            markers=True, dashes=False
+        )
+        plt.legend(title="Region / Technology", bbox_to_anchor=(1.02, 1), loc='upper left', frameon=True, shadow=True)
+    elif "Region" in df.columns:
+        sns.lineplot(
+            data=df, x="Year", y=y_col,
+            hue="Region", markers=True
+        )
+        plt.legend(title="Region", bbox_to_anchor=(1.02, 1), loc='upper left', frameon=True, shadow=True)
+    else:
+        sns.lineplot(
+            data=df, x="Year", y=y_col,
+            marker="o"
+        )
+
+    plt.xlabel(r"$\mathrm{Year}$", fontsize=20)
+    plt.ylabel(ylabel, fontsize=20)
+    plt.title(title, fontsize=20, pad=15)
+    plt.grid(True, linestyle='--', alpha=0.6)
+    plt.tight_layout()
+
+    # ---- Save plot as both PNG and PDF ----
+    png_path = os.path.join(output_dir, f"{key}.png")
+    pdf_path = os.path.join(output_dir, f"{key}.pdf")
+    plt.savefig(png_path, dpi=600, bbox_inches="tight")
+    plt.savefig(pdf_path, dpi=600, bbox_inches="tight")
+    plt.close()  # Do not display, just save
+
+
+
+
+
+import matplotlib.ticker as mticker
+
+if "BeechArea0" in datasets and "GrassArea0" in datasets:
+    beech_df = datasets["BeechArea0"].sort_values(by="InitialBeechArea", ascending=True)
+    grass_df = datasets["GrassArea0"].sort_values(by="InitialGrassArea", ascending=True)
+
+    fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(14, 7), sharey=True)
+
+    axes[0].barh(beech_df["Region"], beech_df["InitialBeechArea"], color="forestgreen")
+    axes[0].set_xlabel(pretty_labels["InitialBeechArea"])
+    axes[0].set_ylabel("Region")
+    axes[0].set_title(r"$\mathrm{Initial\ Beech\ Area\ by\ Region\ (2020)}$")
+
+    axes[1].barh(grass_df["Region"], grass_df["InitialGrassArea"], color="goldenrod")
+    axes[1].set_xlabel(pretty_labels["InitialGrassArea"])
+    axes[1].set_title(r"$\mathrm{Initial\ Grass\ Area\ by\ Region\ (2020)}$")
+
+    # Set font size for ticks
+    for ax in axes:
+        ax.tick_params(axis='x', labelsize=15)
+        ax.tick_params(axis='y', labelsize=15)
+
+        # Scientific notation for x-axis
+        formatter = mticker.ScalarFormatter(useMathText=True)
+        formatter.set_scientific(True)
+        formatter.set_powerlimits((-2, 2))  # Scientific if < 0.01 or > 100
+        ax.xaxis.set_major_formatter(formatter)
+
+    plt.tight_layout()
+    fig.savefig(os.path.join(output_dir, "InitialBeechArea_GrassArea.png"), dpi=600, bbox_inches="tight")
+    fig.savefig(os.path.join(output_dir, "InitialBeechArea_GrassArea.pdf"), dpi=600, bbox_inches="tight")
+    plt.close(fig)
+
+
+
+
+
+
+
+
+
+
+############################################################
+############################################################
+############################################################
+############################################################
+############################################################
+############################################################
 
 import pandas as pd
 
@@ -415,102 +469,6 @@ ghg_removal_values = ghgFMs["GHG_Removal"].tolist()
 forest_management_growth_values = FMsgrowth["ForestManagementGrowth"].tolist()
 
 
-
-
-
-
-############################################
-############################################
-############################################
-############################################
-############################################
-############################################
-
-"""
-Plots of the Optimizations Results
-"""
-
-
-"""
-import gdxpds
-import pandas as pd
-
-# Load the .gdx file
-gdx_file = "results.gdx"
-gdx_data_result = gdxpds.to_dataframes(gdx_file)
-
-# Print available keys to confirm all variables exist
-print("Available keys in results.gdx:", gdx_data_result.keys())
-
-# Extract Decision Variables
-df_capFMs = gdx_data_result['capFMs'][['year', 'techFMs', 'r', 'Level']].rename(columns={'Level': 'capFMs'})
-df_capAgri = gdx_data_result['capAgri'][['year', 'techAgri', 'r', 'Level']].rename(columns={'Level': 'capAgri'})
-
-# Extract GHG Abatement Data
-df_ghgAbateFMs = gdx_data_result['ghgAbateTechFMs'][['year', 'techFMs', 'r', 'Level']].rename(columns={'Level': 'ghgAbateTechFMs'})
-df_ghgAbateAgri = gdx_data_result['ghgAbateTechAgri'][['year', 'techAgri', 'r', 'Level']].rename(columns={'Level': 'ghgAbateTechAgri'})
-
-# Extract Cost Data
-df_total_cost_annual = gdx_data_result['Total_costAnnual'][['year', 'Level']].rename(columns={'Level': 'Total_costAnnual'})
-df_total_cost = gdx_data_result['Total_cost'][['Level']].rename(columns={'Level': 'Total_cost'})
-df_costAnnualFMs = gdx_data_result['costAnnualFMs'][['year', 'Level']].rename(columns={'Level': 'costAnnualFMs'})
-df_costAnnualAgri = gdx_data_result['costAnnualAgri'][['year', 'Level']].rename(columns={'Level': 'costAnnualAgri'})
-
-# Extract Total GHG Reduction
-df_total_ghg = gdx_data_result['Total_ghg'][['Level']].rename(columns={'Level': 'Total_ghg'})
-df_total_ghg_annual = gdx_data_result['Total_ghgAnnual'][['year', 'Level']].rename(columns={'Level': 'Total_ghgAnnual'})
-
-# Extract Other Variables
-df_FMsGrassArea = gdx_data_result['FMsGrassArea'][['year', 'r', 'Level']].rename(columns={'Level': 'FMsGrassArea'})
-df_FMsBeechArea = gdx_data_result['FMsBeechArea'][['year', 'r', 'Level']].rename(columns={'Level': 'FMsBeechArea'})
-df_AgriGrassArea = gdx_data_result['AgriGrassArea'][['year', 'r', 'Level']].rename(columns={'Level': 'AgriGrassArea'})
-df_CO2gapRewt = gdx_data_result['CO2gapRewt'][['Level']].rename(columns={'Level': 'CO2gapRewt'})
-
-# Fix: Extract purCO2LULUCF by renaming first column to 'year'
-df_purCO2LULUCF = gdx_data_result['purCO2LULUCF'].rename(columns={'*': 'year'})[['year', 'Level']]
-df_purCO2LULUCF = df_purCO2LULUCF.rename(columns={'Level': 'purCO2LULUCF'})
-
-# 
-df_ghgAbateAnnualFMs = gdx_data_result['ghgAbateAnnualFMs'][['year', 'Level']].rename(columns={'Level': 'ghgAbateAnnualFMs'})
-
-# Extract Cost by Technology
-df_costTechFMs = gdx_data_result['costTechFMs'][['year', 'techFMs', 'r', 'Level']].rename(columns={'Level': 'costTechFMs'})
-df_costTechAgri = gdx_data_result['costTechAgri'][['year', 'techAgri', 'r', 'Level']].rename(columns={'Level': 'costTechAgri'})
-
-
-
-# Save extracted data to CSV files
-df_capFMs.to_csv("capFMs_results.csv", index=False)
-df_capAgri.to_csv("capAgri_results.csv", index=False)
-df_ghgAbateFMs.to_csv("ghgAbateFMs_results.csv", index=False)
-df_ghgAbateAgri.to_csv("ghgAbateAgri_results.csv", index=False)
-df_total_cost_annual.to_csv("total_cost_annual.csv", index=False)
-
-df_costAnnualFMs.to_csv("costAnnualFMs_results.csv", index=False)
-df_costAnnualAgri.to_csv("costAnnualAgri_results.csv", index=False)
-
-df_total_ghg_annual.to_csv("total_ghg_annual.csv", index=False)
-df_FMsGrassArea.to_csv("FMsGrassArea.csv", index=False)
-df_FMsBeechArea.to_csv("FMsBeechArea.csv", index=False)
-
-df_purCO2LULUCF.to_csv("purCO2LULUCF.csv", index=False)
-
-
-df_costTechFMs.to_csv("costTechFMs.csv", index=False)
-df_costTechAgri.to_csv("costTechAgri.csv", index=False)
-
-
-
-df_CO2gapRewt.to_csv("CO2gapRewt.csv", index=False)
-df_total_cost.to_csv("total_cost.csv", index=False)
-df_total_ghg.to_csv("total_ghg.csv", index=False)
-
-print("🎉 Extraction completed. All files saved successfully.")
-
-"""
-
-
-############################################
 ############################################
 ############################################
 ############################################
@@ -521,29 +479,29 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Load data (same as before)
-df_capFMs = pd.read_csv(gams_system_dir + "/data/" +"capFMs_results.csv")
-df_capAgri = pd.read_csv(gams_system_dir + "/data/" +"capAgri_results.csv")
-df_ghgAbateFMs = pd.read_csv(gams_system_dir + "/data/" +"ghgAbateFMs_results.csv")
-df_ghgAbateAgri = pd.read_csv(gams_system_dir + "/data/" +"ghgAbateAgri_results.csv")
-df_total_cost_annual = pd.read_csv(gams_system_dir + "/data/" +"total_cost_annual.csv")
-df_costAnnualFMs = pd.read_csv(gams_system_dir + "/data/" +"costAnnualFMs_results.csv")
-df_costAnnualAgri = pd.read_csv(gams_system_dir + "/data/" +"costAnnualAgri_results.csv")
-df_total_ghg_annual = pd.read_csv(gams_system_dir + "/data/" +"total_ghg_annual.csv")
-df_FMsGrassArea = pd.read_csv(gams_system_dir + "/data/" +"FMsGrassArea.csv")
-df_FMsBeechArea = pd.read_csv(gams_system_dir + "/data/" +"FMsBeechArea.csv")
-df_purCO2LULUCF = pd.read_csv(gams_system_dir + "/data/" +"purCO2LULUCF.csv")
+df_capFMs = pd.read_csv(gams_system_dir + "/data/Results_base_scenario/" +"capFMs_results.csv")
+df_capAgri = pd.read_csv(gams_system_dir + "/data/Results_base_scenario/" +"capAgri_results.csv")
+df_ghgAbateFMs = pd.read_csv(gams_system_dir + "/data/Results_base_scenario/" +"ghgAbateFMs_results.csv")
+df_ghgAbateAgri = pd.read_csv(gams_system_dir + "/data/Results_base_scenario/" +"ghgAbateAgri_results.csv")
+df_total_cost_annual = pd.read_csv(gams_system_dir + "/data/Results_base_scenario/" +"total_cost_annual.csv")
+df_costAnnualFMs = pd.read_csv(gams_system_dir + "/data/Results_base_scenario/" +"costAnnualFMs_results.csv")
+df_costAnnualAgri = pd.read_csv(gams_system_dir + "/data/Results_base_scenario/" +"costAnnualAgri_results.csv")
+df_total_ghg_annual = pd.read_csv(gams_system_dir + "/data/Results_base_scenario/" +"total_ghg_annual.csv")
+df_FMsGrassArea = pd.read_csv(gams_system_dir + "/data/Results_base_scenario/" +"FMsGrassArea.csv")
+df_FMsBeechArea = pd.read_csv(gams_system_dir + "/data/Results_base_scenario/" +"FMsBeechArea.csv")
+df_purCO2LULUCF = pd.read_csv(gams_system_dir + "/data/Results_base_scenario/" +"purCO2LULUCF.csv")
 
-df_costTechFMs = pd.read_csv(gams_system_dir + "/data/" + "costTechFMs.csv")
-df_costTechAgri = pd.read_csv(gams_system_dir + "/data/" + "costTechAgri.csv")
-df_CO2gapRewt = pd.read_csv(gams_system_dir + "/data/" + "CO2gapRewt.csv")
-df_total_cost = pd.read_csv(gams_system_dir + "/data/" + "total_cost.csv")
-df_total_ghg = pd.read_csv(gams_system_dir + "/data/" + "total_ghg.csv")
+df_costTechFMs = pd.read_csv(gams_system_dir + "/data/Results_base_scenario/" + "costTechFMs.csv")
+df_costTechAgri = pd.read_csv(gams_system_dir + "/data/Results_base_scenario/" + "costTechAgri.csv")
+df_CO2gapRewt = pd.read_csv(gams_system_dir + "/data/Results_base_scenario/" + "CO2gapRewt.csv")
+df_total_cost = pd.read_csv(gams_system_dir + "/data/Results_base_scenario/" + "total_cost.csv")
+df_total_ghg = pd.read_csv(gams_system_dir + "/data/Results_base_scenario/" + "total_ghg.csv")
 
 
 # Set consistent style
 sns.set_theme(style="whitegrid")
 plt.rcParams.update({
-    "figure.dpi": 350,
+    "figure.dpi": 600,
     "axes.titlesize": 20,
     "axes.labelsize": 16,
     "xtick.labelsize": 14,
@@ -704,9 +662,6 @@ plt.tight_layout()
 plt.show()
 
 
-
-
-###########################################
 ###########################################
 ###########################################
 ###########################################
@@ -717,17 +672,17 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Load extracted CSV data
-df_capFMs = pd.read_csv(gams_system_dir + "/data/" +"capFMs_results.csv")
-df_capAgri = pd.read_csv(gams_system_dir + "/data/" +"capAgri_results.csv")
-df_ghgAbateFMs = pd.read_csv(gams_system_dir + "/data/" +"ghgAbateFMs_results.csv")
-df_ghgAbateAgri = pd.read_csv(gams_system_dir + "/data/" +"ghgAbateAgri_results.csv")
-df_total_cost_annual = pd.read_csv(gams_system_dir + "/data/" +"total_cost_annual.csv")
-df_costAnnualFMs = pd.read_csv(gams_system_dir + "/data/" +"costAnnualFMs_results.csv")
-df_costAnnualAgri = pd.read_csv(gams_system_dir + "/data/" +"costAnnualAgri_results.csv")
-df_total_ghg_annual = pd.read_csv(gams_system_dir + "/data/" +"total_ghg_annual.csv")
-df_FMsGrassArea = pd.read_csv(gams_system_dir + "/data/" +"FMsGrassArea.csv")
-df_FMsBeechArea = pd.read_csv(gams_system_dir + "/data/" +"FMsBeechArea.csv")
-df_purCO2LULUCF = pd.read_csv(gams_system_dir + "/data/" +"purCO2LULUCF.csv")
+df_capFMs = pd.read_csv(gams_system_dir + "/data/Results_base_scenario/" +"capFMs_results.csv")
+df_capAgri = pd.read_csv(gams_system_dir + "/data/Results_base_scenario/" +"capAgri_results.csv")
+df_ghgAbateFMs = pd.read_csv(gams_system_dir + "/data/Results_base_scenario/" +"ghgAbateFMs_results.csv")
+df_ghgAbateAgri = pd.read_csv(gams_system_dir + "/data/Results_base_scenario/" +"ghgAbateAgri_results.csv")
+df_total_cost_annual = pd.read_csv(gams_system_dir + "/data/Results_base_scenario/" +"total_cost_annual.csv")
+df_costAnnualFMs = pd.read_csv(gams_system_dir + "/data/Results_base_scenario/" +"costAnnualFMs_results.csv")
+df_costAnnualAgri = pd.read_csv(gams_system_dir + "/data/Results_base_scenario/" +"costAnnualAgri_results.csv")
+df_total_ghg_annual = pd.read_csv(gams_system_dir + "/data/Results_base_scenario/" +"total_ghg_annual.csv")
+df_FMsGrassArea = pd.read_csv(gams_system_dir + "/data/Results_base_scenario/" +"FMsGrassArea.csv")
+df_FMsBeechArea = pd.read_csv(gams_system_dir + "/data/Results_base_scenario/" +"FMsBeechArea.csv")
+df_purCO2LULUCF = pd.read_csv(gams_system_dir + "/data/Results_base_scenario/" +"purCO2LULUCF.csv")
 
 # Set plot style
 plt.style.use("ggplot")
@@ -800,9 +755,6 @@ plt.show()
 
 
 
-
-
-###########################################
 ###########################################
 ###########################################
 ###########################################
@@ -846,9 +798,6 @@ plt.show()
 
 
 
-
-
-###########################################
 ###########################################
 ###########################################
 ###########################################
@@ -890,9 +839,6 @@ plt.tight_layout()
 plt.show()
 
 
-
-
-###########################################
 ###########################################
 ###########################################
 ###########################################
@@ -1079,122 +1025,5 @@ for region in regions:
 
 ####################
 ####################
-
-
-
-"""
-
-import pandas as pd
-import numpy as np
-from scipy.stats import linregress
-from numpy.polynomial.polynomial import Polynomial
-
-# Function to compute statistical features for (region, technology)
-def compute_features(df, value_col, feature_prefix):
-    extracted_features = []
-
-    # Group by (Region, Technology)
-    for (region, tech), group in df.groupby(["r", "techFMs"]):
-        years = group["year"].values.astype(float)  # Convert years to numeric
-        values = group[value_col].values
-
-        # Compute linear regression slope
-        slope, _, _, _, _ = linregress(years, values)
-
-        # Compute polynomial fits
-        poly_2 = Polynomial.fit(years, values, 2).convert().coef
-        poly_3 = Polynomial.fit(years, values, 3).convert().coef
-
-        # Extract polynomial coefficients safely
-        poly_2_c1 = poly_2[1] if len(poly_2) > 1 else 0
-        poly_2_c2 = poly_2[2] if len(poly_2) > 2 else 0
-        poly_3_c1 = poly_3[1] if len(poly_3) > 1 else 0
-        poly_3_c2 = poly_3[2] if len(poly_3) > 2 else 0
-        poly_3_c3 = poly_3[3] if len(poly_3) > 3 else 0
-
-        # Compute other statistical features
-        initial_value = values[0]
-        final_value = values[-1]
-        mean_value = np.mean(values)
-        std_value = np.std(values)
-        range_value = np.max(values) - np.min(values)
-
-        # Append results
-        extracted_features.append([
-            region, tech, initial_value, final_value, slope, 
-            poly_2_c1, poly_2_c2,  # Quadratic coefficients
-            poly_3_c1, poly_3_c2, poly_3_c3,  # Cubic coefficients
-            mean_value, std_value, range_value
-        ])
-
-    # Convert to DataFrame
-    feature_df = pd.DataFrame(extracted_features, columns=[
-        "Region", "Technology", f"{feature_prefix}_2020", f"{feature_prefix}_2050", f"{feature_prefix}_Slope",
-        f"{feature_prefix}_Poly2_C1", f"{feature_prefix}_Poly2_C2",
-        f"{feature_prefix}_Poly3_C1", f"{feature_prefix}_Poly3_C2", f"{feature_prefix}_Poly3_C3",
-        f"{feature_prefix}_Mean", f"{feature_prefix}_Std", f"{feature_prefix}_Range"
-    ])
-    
-    return feature_df
-
-# Compute features for GHG abatement
-ghgAbateFMs_features = compute_features(df_ghgAbateFMs, "ghgAbateTechFMs", "GHGAbate")
-
-ghgAbateFMs_features["Technology"].unique()
-
-"""
-
-
-
-##########################################
-##########################################
-##########################################
-
-"""
-
-### Observations:
-1. **Objective Function**: The model minimizes the total cost of implementing different land-use-based carbon sequestration techniques.
-2. **Decision Variables**:
-   - `capFMs`: Implementation of forest management strategies.
-   - `capAgri`: Implementation of agricultural-based strategies.
-   - `ghgAbateTechFMs` & `ghgAbateTechAgri`: GHG abatement potential via FMs and agriculture.
-3. **Constraints**:
-   - Land-use availability constraints for forests, grasslands, and peatlands.
-   - Growth rate constraints for forest and agriculture-based technologies.
-   - National policy constraints, such as rewetting targets.
-   - GHG abatement constraints ensuring emissions reduction goals are met.
-4. **Data Handling**:
-   - Inputs are loaded from `test_Ali.gdx`.
-   - Results are saved in `results.gdx` and then exported to `results.csv`.
-
-### Potential Improvements or Questions:
-- **Validation of Constraints**: Are you ensuring that land-use constraints do not overly restrict feasible solutions? Have you tested for infeasibility or overly conservative constraints?
-- **Sensitivity Analysis**: Have you tried varying `CO2price`, `PercRewetting`, or `ghgTargetLULUCF` to see how sensitive your model is to these factors?
-- **Optimization Strategy**: Since this is a long-term (2020-2050) model, have you considered using a dynamic programming approach instead of LP?
-- **Parallel Computation**: If the dataset is large, you might benefit from using parallel computing options in GAMS.
-
-
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.model_selection import train_test_split
-
-# Split data
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-# Train a Random Forest Regressor (or another ML model)
-model = RandomForestRegressor(n_estimators=100, random_state=42)
-model.fit(X_train, y_train)
-
-# Create SHAP explainer
-explainer = shap.Explainer(model, X_train)
-shap_values = explainer(X_test)
-
-# Summary plot to show feature importance
-shap.summary_plot(shap_values, X_test)
-"""
-
-
-#############################################
-#############################################
-
 
 

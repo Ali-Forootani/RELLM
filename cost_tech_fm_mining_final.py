@@ -27,8 +27,8 @@ import numpy as np
 ###########################################################
 
 
-from RenewableEnergyLanguageModel.scenario_generator import GDXScaler
-from RenewableEnergyLanguageModel.feature_construction_fm import compute_global_trend, compute_trend
+from scenario_generator import GDXScaler
+from feature_construction_fm import compute_global_trend, compute_trend
 
 
 """  
@@ -72,7 +72,7 @@ gdx_data = gdxpds.to_dataframes(gdx_base_file)
 Extracting required variables for doing simulations
 """
 
-from RenewableEnergyLanguageModel.loading_saving_parms_from_gdx_csv import load_and_save_selected_symbols
+from loading_saving_parms_from_gdx_csv import load_and_save_selected_symbols
 
 
 
@@ -88,7 +88,7 @@ load_and_save_selected_symbols(gdx_dir, target_symbols, save_path=save_dir)
 
 
 
-from RenewableEnergyLanguageModel.utiles import load_and_rename_csvs, get_dynamic_rename_mapping_fixed
+from utiles import load_and_rename_csvs, get_dynamic_rename_mapping_fixed
 
 
 
@@ -142,7 +142,7 @@ for key in datasets.keys():
 
 # === EXAMPLE USAGE ===
 
-from RenewableEnergyLanguageModel.scenario_generator import build_scenario_hierarchy
+from scenario_generator import build_scenario_hierarchy
 
 
 scenarios = build_scenario_hierarchy(datasets)
@@ -181,7 +181,7 @@ gams_system_dir = setting_directory(0)  # Example path for Windows
 
 
 
-from RenewableEnergyLanguageModel.utiles import process_all_results_scenarios
+from utiles import process_all_results_scenarios
 
 # === Example usage ===
 
@@ -193,12 +193,13 @@ results_folder = gdx_file + "Results_dataset_scenarios"  # <<<< your folder with
 
 merged_feature_arrays = process_all_results_scenarios(scenarios, results_folder)
 
+"""
 # Save result (optional)
 for scenario, df in merged_feature_arrays.items():
     filename = f"{scenario}_features.csv"
     df.to_csv(filename, index=False)
     print(f"Saved {filename}")
-
+"""
 
 ############################################
 ############################################
@@ -378,7 +379,7 @@ from RenewableEnergyLanguageModel.correlations_module import (plot_scenario_corr
                                                    plot_dendrogram_pca,
                                                    kernel_pca_projection_sampled,
                                                    plot_cost_output_correlation_heatmap,
-                                                   generate_pca_summary_text
+                                                   generate_pca_summary_text,
                                                    )
 
 
@@ -482,15 +483,7 @@ END OF THIS Module!!! Furthur ANALYSIS WILL BE FOR OTHER VARIABLES
 ###################################################################################
 ###################################################################################
 
-
-
-
-
-###################################################################################
-###################################################################################
-###################################################################################
-###################################################################################
-
+"""
 
 pca_projection(fully_enhanced_arrays_aliased , value_column=None, title="PCA of Input Features (fully_enhanced_arrays)")
 
@@ -641,7 +634,6 @@ X_kpca_approx = pca.fit_transform(X_features)
 #################################################################
 
 
-
 # Use the keys from either dict (assuming both have matching keys)
 scenario_keys = fully_enhanced_arrays.keys()
 
@@ -652,16 +644,6 @@ scenario_meta_dict, alias_map, reverse_alias_map = parse_scenario_keys(scenario_
 fully_enhanced_arrays_aliased = replace_dict_keys(fully_enhanced_arrays, alias_map)
 
 costTechFMs_dict_aliased = replace_dict_keys(costTechFMs_dict, alias_map)
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -677,7 +659,7 @@ labels = fcluster(linkage_matrix, k, criterion='maxclust')
 
 print(labels)  # 1D array, one cluster label per scenario (order matches scenario_matrix_T)
 
-
+"""
 
 
 
@@ -728,6 +710,8 @@ plt.show()
 
 ##############################################
 
+
+"""
 final_feature_array_all[columns_to_scale] = scaler.fit_transform(final_feature_array_all[columns_to_scale])
 
 
@@ -765,11 +749,12 @@ print(feature_parts[0].shape)  # This will print the shape of the first part
 # Check the last part
 print(feature_parts[-1].shape)  # This will print the shape of the last part
 
-
+"""
 
 
 ##############################################
 
+"""
 
 results_ensemble = train_and_predict_costTechFMs_ensemble(
     parts[0],
@@ -808,12 +793,14 @@ plt.grid(True)
 plt.tight_layout()
 plt.show()
 
+"""
 
 
 ###############################################################################
 ###############################################################################
 ###############################################################################
 
+"""
 import numpy as np
 
 # Number of rows per part
@@ -859,9 +846,12 @@ rmse_global = np.sqrt(mean_squared_error(global_y_true, global_y_pred))
 print(f"🌍 Global Voting R²: {r2_global:.4f}")
 print(f"🌍 Global Voting RMSE: {rmse_global:.2f} euros")
 
+"""
+
 ###############################################################################
 ###############################################################################
 
+"""
 # Select parts by index (e.g., parts 2, 3, 4, 5 in 0-based index are 1, 2, 3, 4)
 selected_indices = [0, 1, 3, 4, 6, 9]
 
@@ -909,6 +899,7 @@ plt.grid(True)
 plt.tight_layout()
 plt.show()
 
+"""
 
 
 ###############################################################################
@@ -916,6 +907,8 @@ plt.show()
 
 """
 solution to the low efficienct ML method!!!
+"""
+
 """
 
 # Combine all parts into one big dataset
@@ -950,6 +943,7 @@ rmse_shared = np.sqrt(mean_squared_error(y_test_shared, global_y_pred_shared))
 print(f"✅ Fixed Voting R²: {r2_shared:.4f}")
 print(f"✅ Fixed Voting RMSE: {rmse_shared:.2f} euros")
 
+"""
 
 
 ###############################################################################
@@ -972,7 +966,8 @@ print(f"✅ Fixed Voting RMSE: {rmse_shared:.2f} euros")
 
 ###############################
 
-prompt = f"""
+#prompt = f
+"""
 You are a sustainability analyst preparing a summary report for stakeholders, based on a machine learning model and SHAP analysis focused on forest management technology costs (`costTechFMs`).
 
 🎯 **Objective**: Predict and understand the key drivers influencing technology investment costs (`costTechFMs`) in forest management.

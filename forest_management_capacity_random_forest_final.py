@@ -26,8 +26,8 @@ import gdxpds
 ########################################
 
 
-from Temporary_backups.scenario_generator import GDXScaler
-from Temporary_backups.feature_construction_fm import compute_global_trend, compute_trend
+from RenewableEnergyLanguageModel.scenario_generator import GDXScaler
+from RenewableEnergyLanguageModel.feature_construction_fm import compute_global_trend, compute_trend
 
 ########################################
 ########################################
@@ -37,13 +37,16 @@ Scenario Generation:
     
     Inserting list of variables
     List of Scaling factors corresponding to variables
+    variables = ["FMsgrowth", "costInvLevelFMs"]
+    scale_factors = [1.2]  # Example scale factors
+    
 """
 
 
 gdx_base_file = os.path.join(os.path.abspath(os.getcwd()), "scenarios_neg_emi", "base_scenario.gdx")
 output_dir = "~/Documents/Mohammad_Sadr_files/scenarios_neg_emi/dataset_scenarios"
-variables = ["FMsgrowth", "costInvLevelFMs"]
-scale_factors = [1.2]  # Example scale factors
+variables = []
+scale_factors = []  # Example scale factors
 
 scaler = GDXScaler(gdx_base_file, output_dir, variables, scale_factors)
 scaler.scale_and_save()
@@ -63,7 +66,7 @@ gdx_data = gdxpds.to_dataframes(gdx_base_file)
 Extracting required variables for doing simulations
 """
 
-from Temporary_backups.loading_saving_parms_from_gdx_csv import load_and_save_selected_symbols
+from RenewableEnergyLanguageModel.loading_saving_parms_from_gdx_csv import load_and_save_selected_symbols
 
 
 
@@ -86,7 +89,7 @@ load_and_save_selected_symbols(gdx_dir, target_symbols, save_path=save_dir)
 
 
 
-from Temporary_backups.utiles import load_and_rename_csvs, get_dynamic_rename_mapping_fixed
+from RenewableEnergyLanguageModel.utiles import load_and_rename_csvs, get_dynamic_rename_mapping_fixed
 
 
 
@@ -195,7 +198,7 @@ def build_scenario_hierarchy(datasets):
 
 # === EXAMPLE USAGE ===
 
-from Temporary_backups.scenario_generator import build_scenario_hierarchy
+from RenewableEnergyLanguageModel.scenario_generator import build_scenario_hierarchy
 
 
 scenarios = build_scenario_hierarchy(datasets)
@@ -234,7 +237,7 @@ gams_system_dir = setting_directory(1)  # Example path for Windows
 
 
 
-from Temporary_backups.utiles import process_all_results_scenarios
+from RenewableEnergyLanguageModel.utiles import process_all_results_scenarios
 
 # === Example usage ===
 
@@ -263,7 +266,7 @@ for scenario, df in merged_feature_arrays.items():
 Done enhancing all scenarios with CO2 and GHG trend features.
 """
 
-from Temporary_backups.utiles import enhance_with_global_trends_from_scenarios, enhance_with_region_level_features
+from RenewableEnergyLanguageModel.utiles import enhance_with_global_trends_from_scenarios, enhance_with_region_level_features
 
 
 enhanced_merged_feature_arrays = enhance_with_global_trends_from_scenarios(merged_feature_arrays, scenarios)
@@ -311,7 +314,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from Temporary_backups.gdx_to_csv_function import extract_gdx_results, build_input_output_pairs
+from RenewableEnergyLanguageModel.gdx_to_csv_function import extract_gdx_results, build_input_output_pairs
 
 
 #gdx_filename: str, output_dir: str, sub_dir: str
@@ -319,7 +322,7 @@ from Temporary_backups.gdx_to_csv_function import extract_gdx_results, build_inp
 
 # Parameters
 results_folder = gams_system_dir + "/scenarios_neg_emi/Results_dataset_scenarios"
-output_dir = gams_system_dir + "/Temporary_backups/data"
+output_dir = gams_system_dir + "/RenewableEnergyLanguageModel/data"
 
 
 
@@ -330,7 +333,7 @@ import pandas as pd
 
 # Define paths
 results_folder = os.path.join(gams_system_dir, "scenarios_neg_emi/Results_dataset_scenarios")
-output_root = os.path.join(gams_system_dir, "Temporary_backups/data")
+output_root = os.path.join(gams_system_dir, "RenewableEnergyLanguageModel/data")
 
 # Get all scenario suffixes from available GDX result files
 def get_available_results_scenarios(results_folder):
@@ -399,7 +402,7 @@ final_feature_array_all = pd.concat(features_all, axis=0).reset_index(drop=True)
 
 
 
-from Temporary_backups.random_forest_module import (train_and_predict_capFMs,
+from RenewableEnergyLanguageModel.random_forest_module import (train_and_predict_capFMs,
                                                     train_and_predict_capFMs_ensemble,
                                                     compute_ensemble_shap)
 

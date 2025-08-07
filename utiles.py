@@ -27,7 +27,9 @@ from datetime import datetime
 import os
 import pandas as pd
 
-from RenewableEnergyLanguageModel.feature_construction_fm import compute_global_trend, compute_trend
+from RenewableEnergyLanguageModel.feature_construction_fm import (compute_global_trend
+                                                                  , compute_trend
+                                                                  , compute_agri_trend)
 
 
 
@@ -238,13 +240,14 @@ def process_agri_scenario(scenario_name, datasets_dict):
     Process a single scenario: apply compute_trend, merge all features, fill missing with 0.
     """
    
+   
     
     # === Feature extraction for Region-Technology datasets ===
-    costMarg_features       = compute_trend(datasets_dict["costMargAgri"], "Cost", "CostMargAgri")
-    costInv_features        = compute_trend(datasets_dict["costInvAgri"], "InvestmentCost", "CostInvAgri")
-    costInvLevel_features   = compute_trend(datasets_dict["costInvLevelAgri"], "InvestmentLevelCost", "CostInvLevAgri")
-    ghg_features            = compute_trend(datasets_dict["ghgAgri"], "GHG_Removal", "GHGAgri")
-    growth_features         = compute_trend(datasets_dict["Agrigrowth"], "Agri_Growth", "AgriGrowth")
+    costMarg_features       = compute_agri_trend(datasets_dict["costMargAgri"], "Cost", "CostMargAgri")
+    costInv_features        = compute_agri_trend(datasets_dict["costInvAgri"], "InvestmentCost", "CostInvAgri")
+    costInvLevel_features   = compute_agri_trend(datasets_dict["costInvLevelAgri"], "InvestmentLevelCost", "CostInvLevAgri")
+    ghg_features            = compute_agri_trend(datasets_dict["ghgAgri"], "GHG_Removal", "GHGAgri")
+    growth_features         = compute_agri_trend(datasets_dict["Agrigrowth"], "Agri_Growth", "AgriGrowth")
     
     # === Merge all Region-Technology feature sets ===
     final_feature_array = (
@@ -282,9 +285,6 @@ def process_all_results_agri_scenarios(scenarios, results_folder):
 
     required_keys = ['costMargAgri', 'costInvAgri', 'costInvLevelAgri', 'ghgAgri', 'Agrigrowth']
     
-    print("8888888888888888888888888")
-    print(valid_scenario_suffixes)
-    print("8888888888888888888888888")
     
     for scenario_suffix in valid_scenario_suffixes:
 
@@ -421,6 +421,95 @@ def enhance_with_region_level_features(merged_feature_arrays, scenarios, region_
 
     print("All region-level features merged.")
     return enhanced_arrays
+
+
+######################################
+
+
+def enhance_agri_with_region_level_features(merged_feature_arrays, scenarios, region_feature_keys):
+    """
+    Merge region-level features (e.g., Agriarea0) into each merged feature array by Region.
+    The region-level DataFrames are expected to have columns ['*', '*.1', 'Value'].
+    """
+    enhanced_arrays = {}
+
+    for scenario_name, df in merged_feature_arrays.items():
+        print(f"Merging region-level features into: {scenario_name}")
+        datasets_dict = scenarios.get(scenario_name, {})
+        updated_df = df.copy()
+
+        for key in region_feature_keys:
+            if key in datasets_dict:
+                region_df = datasets_dict[key].copy()
+                # Try to standardize columns if needed
+                if set(region_df.columns) >= {"*", "*.1", "Value"}:
+                    # Rename for region-level features
+                    region_df = region_df.rename(columns={"*.1": "Region", "Value": key})
+                    # Drop Year column if exists
+                    if "Year" in region_df.columns:
+                        region_df = region_df.drop(columns=["Year"])
+                    if "*" in region_df.columns:  # drop the old year column if present
+                        region_df = region_df.drop(columns=["*"])
+                elif "Region" not in region_df.columns:
+                    raise ValueError(f"Region column not found in {key}: {region_df.columns}")
+
+                # Make sure there are no duplicate columns before merging
+                duplicate_cols = [col for col in region_df.columns if col in updated_df.columns and col != "Region"]
+                if duplicate_cols:
+                    region_df = region_df.drop(columns=duplicate_cols)
+                updated_df = updated_df.merge(region_df, on="Region", how="left")
+            else:
+                print(f" -> Warning: {key} not found in scenario {scenario_name}")
+
+        enhanced_arrays[scenario_name] = updated_df
+
+    print("All region-level features merged.")
+    return enhanced_arrays
+
+######################################
+
+
+
+def enhance_agri_with_global_trends_from_scenarios(merged_feature_arrays, scenarios):
+    """
+    PeatExtract
+    
+    by computing trends from corresponding entries in `scenarios`.
+    """
+    enhanced_arrays = {}
+
+    for scenario_name, feature_array in merged_feature_arrays.items():
+        print(f"Enhancing: {scenario_name}")
+
+        datasets_dict = scenarios.get(scenario_name, {})
+        enhanced_df = feature_array.copy()
+        
+        
+        
+        
+        if "PeatExtract" in datasets_dict:
+            df_peat = datasets_dict["PeatExtract"].copy()
+            if "*" in df_peat.columns:
+                df_peat = df_peat.rename(columns={"*": "Year", "Value": "PeatExtract"})
+                df_peat["Year"] = pd.to_numeric(df_peat["Year"], errors="coerce")
+                df_peat["PeatExtract"] = pd.to_numeric(df_peat["PeatExtract"], errors="coerce")
+                peat_features = compute_global_trend(df_peat, "Year", "PeatExtract", "Peat_Extraction")
+            else:
+                peat_features = pd.DataFrame({col: [0.0] for col in ["peat_2020", "peat_2050", "peat_Slope"]})
+
+        
+        # Broadcast to each region
+        unique_regions = enhanced_df["Region"].unique()
+        broadcast_df = pd.DataFrame(unique_regions, columns=["Region"])
+        broadcast_df = broadcast_df.merge(peat_features, how="cross")
+        # Merge with main feature array
+        enhanced_df = enhanced_df.merge(broadcast_df, on="Region", how="left")
+        enhanced_arrays[scenario_name] = enhanced_df
+
+    print("Done enhancing all scenarios with PeatExtract features.")
+    return enhanced_arrays
+
+
 
 
 ######################################
