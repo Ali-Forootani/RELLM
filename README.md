@@ -243,11 +243,15 @@ If you use this repository or the RE-LLM workflow in academic work, please cite 
 
 ## 📝 License
 
-Add a `LICENSE` file (e.g., MIT or Apache-2.0).
+MIT 
 
 ---
 
 ## 🙌 Acknowledgments
 
 This work integrates optimization outputs (GAMS), data engineering, ML surrogates, and LLMs to make complex scenario outcomes accessible to stakeholders.
+
+## 📬 Contact
+
+For questions or collaboration opportunities, please contact: aliforootani@ieee.org/aliforootani@gmail/ali.forootani@ufz.de
 
