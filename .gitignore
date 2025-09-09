@@ -1,5 +1,6 @@
-/__pycache__
-/scenarios_neg_emi
-/Temporary_backups
-/data
-/data_agri
+__pycache__/
+scenarios_neg_emi/
+Temporary_backups/
+data/
+data_agri/
+
