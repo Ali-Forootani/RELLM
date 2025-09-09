@@ -609,7 +609,7 @@ client = OpenAI(
 )
 
 # Step 2: Ask a stakeholder query
-query = "What happens if CO2 price increases by 20%?"
+query = f"""What happens if cost of investment in agriculture decreases, i.e. costInvAgri?"""
 
 
 parsed_dict, alias_map, reverse_alias_map = parse_scenario_keys(scenario_keys)

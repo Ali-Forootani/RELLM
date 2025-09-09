@@ -18,7 +18,12 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-def plot_scenario_correlations(fully_enhanced_arrays, annot_fontsize=12, label_fontsize=14, title_fontsize=18):
+import matplotlib as mpl
+mpl.rcParams.update(mpl.rcParamsDefault)  # Reset to Matplotlib defaults
+
+
+
+def plot_scenario_correlations_sns(fully_enhanced_arrays, annot_fontsize=12, label_fontsize=14, title_fontsize=18):
     """
     Plot a heatmap showing correlations between scenarios based on numeric features,
     with increased font sizes for better readability.
@@ -75,6 +80,87 @@ def plot_scenario_correlations(fully_enhanced_arrays, annot_fontsize=12, label_f
     return scenario_corr
 
 
+
+
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+def plot_scenario_correlations(fully_enhanced_arrays, annot_fontsize=12, label_fontsize=14, title_fontsize=18):
+    """
+    Plot a heatmap showing correlations between scenarios based on numeric features,
+    using matplotlib only (no seaborn).
+
+    Parameters:
+    - fully_enhanced_arrays (dict): keys are scenario names; values are DataFrames with numeric features.
+
+    Returns:
+    - scenario_corr (pd.DataFrame): Correlation matrix between scenarios.
+    """
+    scenario_vectors = {}
+
+    # Extract and flatten numeric arrays
+    for scenario, df in fully_enhanced_arrays.items():
+        arr = df.select_dtypes(include=[float, int]).values.flatten()
+        scenario_vectors[scenario] = arr
+
+    # Align all vectors to the shortest length
+    min_len = min(len(arr) for arr in scenario_vectors.values())
+    for k in scenario_vectors:
+        scenario_vectors[k] = scenario_vectors[k][:min_len]
+
+    # Create DataFrame from aligned vectors
+    scenario_matrix = pd.DataFrame(scenario_vectors)
+
+    # Compute correlation matrix
+    scenario_corr = scenario_matrix.corr()
+
+    # --- Plot with matplotlib only ---
+    fig, ax = plt.subplots(figsize=(18, 18))
+
+    im = ax.imshow(scenario_corr.values, interpolation='nearest', cmap='viridis', vmin=-1, vmax=1)
+    cbar = fig.colorbar(im, ax=ax, shrink=0.8)
+    cbar.ax.tick_params(labelsize=label_fontsize)
+    cbar.set_label("Correlation", size=label_fontsize)
+
+    # Axis ticks and labels
+    labels = scenario_corr.columns.tolist()
+    ax.set_xticks(np.arange(len(labels)))
+    ax.set_yticks(np.arange(len(labels)))
+    ax.set_xticklabels(labels, fontsize=label_fontsize, rotation=45, ha='right')
+    ax.set_yticklabels(labels, fontsize=label_fontsize)
+
+    # Titles and axes labels
+    ax.set_title("Correlation Between Scenarios (All Numeric Features)", fontsize=title_fontsize, pad=12)
+    ax.set_xlabel("Scenario", fontsize=label_fontsize)
+    ax.set_ylabel("Scenario", fontsize=label_fontsize)
+
+    # Grid-like separators (optional)
+    ax.set_xticks(np.arange(-.5, len(labels), 1), minor=True)
+    ax.set_yticks(np.arange(-.5, len(labels), 1), minor=True)
+    ax.grid(which="minor", color="w", linestyle='-', linewidth=0.5)
+    ax.tick_params(which="minor", bottom=False, left=False)
+
+    # Annotate each cell
+    data = scenario_corr.values
+    nrows, ncols = data.shape
+    for i in range(nrows):
+        for j in range(ncols):
+            ax.text(j, i, f"{data[i, j]:.2f}",
+                    ha="center", va="center", fontsize=annot_fontsize, color="black")
+
+    fig.tight_layout()
+    plt.show()
+
+    return scenario_corr
+
+
+
+
+
+
+
 # ----------------------------------------------------------
 # ----------------------------------------------------------
 
@@ -85,7 +171,112 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.preprocessing import StandardScaler
 
+
+
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import StandardScaler
+
 def plot_scenario_correlations_better(
+    fully_enhanced_arrays,
+    annot_fontsize=12,
+    label_fontsize=14,
+    title_fontsize=18,
+    scale_features=True,
+    return_matrix=True
+):
+    """
+    Computes and plots a heatmap of scenario correlations with robust alignment and feature scaling,
+    using matplotlib only (no seaborn).
+    """
+    # Step 1: Collect and align numeric DataFrames
+    scenario_names = list(fully_enhanced_arrays.keys())
+    numeric_dfs = []
+    for scenario in scenario_names:
+        df = fully_enhanced_arrays[scenario]
+        # Sort rows and columns for strict alignment
+        df_sorted = df.sort_values(['Region', 'Technology']).sort_index(axis=1)
+        numeric_df = df_sorted.select_dtypes(include=[np.number])
+        numeric_dfs.append(numeric_df)
+    
+    # Step 2: Restrict to common columns (features) across all scenarios
+    common_columns = set(numeric_dfs[0].columns)
+    for df in numeric_dfs[1:]:
+        common_columns &= set(df.columns)
+    common_columns = sorted(list(common_columns))
+    numeric_dfs = [df[common_columns] for df in numeric_dfs]
+
+    # Step 3: Check that all shapes match, restrict to minimum shape if not
+    nrows = min(df.shape[0] for df in numeric_dfs)
+    ncols = len(common_columns)
+    numeric_dfs = [df.iloc[:nrows, :] for df in numeric_dfs]
+
+    # Step 4: Feature scaling (z-score per feature, per scenario)
+    arrs = []
+    if scale_features:
+        for df in numeric_dfs:
+            scaler = StandardScaler()
+            arr = scaler.fit_transform(df.values)  # shape: (nrows, ncols)
+            arrs.append(arr.flatten())
+    else:
+        arrs = [df.values.flatten() for df in numeric_dfs]
+
+    # Step 5: Build matrix for correlation
+    scenario_matrix = pd.DataFrame({k: v for k, v in zip(scenario_names, arrs)})
+
+    # Step 6: Compute correlation matrix
+    scenario_corr = scenario_matrix.corr()
+
+    # Step 7: Plot heatmap with matplotlib
+    fig, ax = plt.subplots(figsize=(12, 12))
+    im = ax.imshow(scenario_corr.values, interpolation='nearest', cmap='viridis', vmin=-1, vmax=1)
+
+    # Colorbar
+    cbar = fig.colorbar(im, ax=ax, shrink=0.8)
+    cbar.ax.tick_params(labelsize=label_fontsize)
+    cbar.set_label("Correlation", size=label_fontsize)
+
+    # Axis ticks and labels
+    labels = scenario_corr.columns.tolist()
+    ax.set_xticks(np.arange(len(labels)))
+    ax.set_yticks(np.arange(len(labels)))
+    ax.set_xticklabels(labels, fontsize=label_fontsize, rotation=45, ha='right')
+    ax.set_yticklabels(labels, fontsize=label_fontsize)
+
+    # Title and axis labels
+    ax.set_title("Correlation Between Scenarios (Aligned, Scaled Numeric Features)", fontsize=title_fontsize, pad=16)
+    ax.set_xlabel("Scenario", fontsize=label_fontsize)
+    ax.set_ylabel("Scenario", fontsize=label_fontsize)
+
+    # Grid-like separators
+    ax.set_xticks(np.arange(-.5, len(labels), 1), minor=True)
+    ax.set_yticks(np.arange(-.5, len(labels), 1), minor=True)
+    ax.grid(which="minor", color="w", linestyle='-', linewidth=0.5)
+    ax.tick_params(which="minor", bottom=False, left=False)
+
+    # Cell annotations
+    data = scenario_corr.values
+    nrows_corr, ncols_corr = data.shape
+    for i in range(nrows_corr):
+        for j in range(ncols_corr):
+            ax.text(j, i, f"{data[i, j]:.2f}", ha="center", va="center",
+                    fontsize=annot_fontsize, color="black")
+
+    fig.tight_layout()
+    plt.show()
+
+    if return_matrix:
+        return scenario_corr
+
+
+
+
+
+
+
+def plot_scenario_correlations_better_sns(
     fully_enhanced_arrays,
     annot_fontsize=12,
     label_fontsize=14,
@@ -221,6 +412,9 @@ def plot_scenario_dendrogram(
     Returns:
     - Z (ndarray): Linkage matrix used for dendrogram.
     """
+    import matplotlib as mpl
+    mpl.rcParams.update(mpl.rcParamsDefault)  # Reset to Matplotlib defaults
+    
     # Compute distance matrix (1 - correlation)
     distance = 1 - scenario_corr
     # Convert to condensed distance matrix for linkage

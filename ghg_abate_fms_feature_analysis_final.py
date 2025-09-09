@@ -371,21 +371,6 @@ from RenewableEnergyLanguageModel.correlations_module import (plot_scenario_corr
                                                    find_most_and_least_similar_scenarios,
                                                    plot_costTechFMs_correlation,
                                                    plot_ghgAbateFMs_correlation,
-                                                   #pca_projection,
-                                                   #mds_projection,
-                                                   #compute_silhouette,
-                                                   #scenario_cca,
-                                                   #cca_feature_importance,
-                                                   #cca_feature_importance_flat,
-                                                   #pca_features,
-                                                   #pca_outputs,
-                                                   #pca_features_per_scenario,
-                                                   #pca_features_colored,
-                                                   #pca_features_colored_by_region_tech,
-                                                   #pca_outputs_colored_by_region_tech,
-                                                   #get_pca_embedding,
-                                                   #plot_dendrogram_pca,
-                                                   #kernel_pca_projection_sampled,
                                                    plot_cost_output_correlation_heatmap,
                                                    generate_pca_summary_text
                                                    )
@@ -403,14 +388,18 @@ ghgAbateFMs_dict_aliased = replace_dict_keys(ghgAbateFMs_dict, alias_map)
 
 
 correlation_matrix = plot_scenario_correlations(fully_enhanced_arrays_aliased)
-linkage_matrix = plot_scenario_dendrogram(correlation_matrix)
+linkage_matrix = plot_scenario_dendrogram(correlation_matrix,
+                                          title = "Forest Management Hierarchical Dendrogram",
+                                          save_path="./plots/input_scenario_dendrogram")
 most_similar, max_corr, least_similar, min_corr = find_most_and_least_similar_scenarios(correlation_matrix)
 plot_cost_output_correlation_heatmap(correlation_matrix)
 
 
 
 correlation_matrix_ghgAbateFMs = plot_ghgAbateFMs_correlation(ghgAbateFMs_dict_aliased)
-linkage_matrix_output = plot_scenario_dendrogram(correlation_matrix_ghgAbateFMs)
+linkage_matrix_output = plot_scenario_dendrogram(correlation_matrix_ghgAbateFMs,
+                                                 title = "GHGAbateFMs Hierarchical Dendrogram",
+                                                 save_path="./plots/ghgAbateFms_scenario_dendrogram")
 most_similar_cost, max_corr_cost, least_similar_cost, min_corr_cost = find_most_and_least_similar_scenarios(correlation_matrix_ghgAbateFMs)
 
 
@@ -420,6 +409,23 @@ plot_cost_output_correlation_heatmap(correlation_matrix_ghgAbateFMs)
 
 
 
+from pathlib import Path
+import pandas as pd
+
+
+outdir = Path("./correlation_matrices")
+outdir.mkdir(parents=True, exist_ok=True)
+
+def ensure_df(mat):
+    return mat if isinstance(mat, pd.DataFrame) else pd.DataFrame(mat)
+
+corr_in_df = ensure_df(correlation_matrix)
+corr_out_df = ensure_df(correlation_matrix_ghgAbateFMs)
+
+corr_in_df.to_csv(outdir / "correlation_matrix_inputs_FMs.csv", index=True, float_format="%.6f")
+corr_out_df.to_csv(outdir / "correlation_matrix_ghgAbateFMs.csv", index=True, float_format="%.6f")
+
+print(f"Saved CSVs to: {outdir.resolve()}")
 
 
 
@@ -432,6 +438,7 @@ scenario_meta_dict, alias_map, reverse_alias_map = parse_scenario_keys(scenario_
 fully_enhanced_arrays_aliased = replace_dict_keys(fully_enhanced_arrays, alias_map)
 costTechFMs_dict_aliased = replace_dict_keys(costTechFMs_dict, alias_map)
 """
+
 
 
 import os
@@ -447,7 +454,8 @@ client = OpenAI(
 )
 
 # Step 2: Ask a stakeholder query
-query = "What happens if CO2 price increases by 20%?"
+query = '''What happens if CO2 price increases by 10%?
+ and Cost of Investment Forest Management (costInvFMs) Decreases by 20%?'''
 
 
 parsed_dict, alias_map, reverse_alias_map = parse_scenario_keys(scenario_keys)

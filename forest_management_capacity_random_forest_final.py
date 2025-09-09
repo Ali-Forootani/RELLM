@@ -6,8 +6,6 @@ Created on Tue Mar 18 16:55:39 2025
 @author: forootan
 """
 
-
-
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -32,19 +30,9 @@ from RenewableEnergyLanguageModel.feature_construction_fm import compute_global_
 ########################################
 ########################################
 
-"""  
-Scenario Generation:
-    
-    Inserting list of variables
-    List of Scaling factors corresponding to variables
-    variables = ["FMsgrowth", "costInvLevelFMs"]
-    scale_factors = [1.2]  # Example scale factors
-    
-"""
-
 
 gdx_base_file = os.path.join(os.path.abspath(os.getcwd()), "scenarios_neg_emi", "base_scenario.gdx")
-output_dir = "~/Documents/Mohammad_Sadr_files/scenarios_neg_emi/dataset_scenarios"
+output_dir = "~/Documents/Mohammad_Sadr_files/RenewableEnergyLanguageModel/scenarios_neg_emi/dataset_scenarios"
 variables = []
 scale_factors = []  # Example scale factors
 
@@ -70,8 +58,8 @@ from RenewableEnergyLanguageModel.loading_saving_parms_from_gdx_csv import load_
 
 
 
-gdx_dir = os.path.expanduser("~/Documents/Mohammad_Sadr_files/scenarios_neg_emi/dataset_scenarios")
-save_dir = os.path.expanduser("~/Documents/Mohammad_Sadr_files/scenarios_neg_emi/csv_outputs")
+gdx_dir = os.path.expanduser("~/Documents/Mohammad_Sadr_files/RenewableEnergyLanguageModel/scenarios_neg_emi/dataset_scenarios")
+save_dir = os.path.expanduser("~/Documents/Mohammad_Sadr_files/RenewableEnergyLanguageModel/scenarios_neg_emi/csv_outputs")
 target_symbols = ["CO2price", "FMsgrowth", "BeechArea0",
                   "ghgTargetLULUCF", "costInvLevelFMs",
                   "costMargFMs","costInvFMs",
@@ -88,24 +76,16 @@ load_and_save_selected_symbols(gdx_dir, target_symbols, save_path=save_dir)
 #############################################################
 
 
-
 from RenewableEnergyLanguageModel.utiles import load_and_rename_csvs, get_dynamic_rename_mapping_fixed
 
-
-
-csv_directory = os.path.expanduser("~/Documents/Mohammad_Sadr_files/scenarios_neg_emi/csv_outputs")
+csv_directory = os.path.expanduser("~/Documents/Mohammad_Sadr_files/RenewableEnergyLanguageModel/scenarios_neg_emi/csv_outputs")
 
 datasets = load_and_rename_csvs(csv_directory)
 
-
 print(datasets)
 
-
-
-
 ################################################
 ################################################
-
 
 
 # Apply dynamic renaming and convert "Year" to numeric
@@ -119,14 +99,6 @@ for key, df in datasets.items():
     if "Year" in df.columns:
         df["Year"] = pd.to_numeric(df["Year"], errors='coerce')
         
-    
-
-
-
-
-
-print(datasets)
-
 
 ############################################
 ############################################
@@ -152,48 +124,6 @@ for key in datasets.keys():
 ############################################
 ############################################
 ############################################
-
-"""
-from collections import defaultdict
-import re
-
-def build_scenario_hierarchy(datasets):
-    """
-    #Build hierarchical scenario dictionary from dataset keys.
-    
-    #Output structure:
-    
-    #scenarios = {
-    #    'CO2price_0.8_FMsgrowth_0.8_BeechArea0_0.8': {
-    #        'costInvFMs': dataset,
-    #        'FMsgrowth': dataset,
-    #        'BeechArea0': dataset,
-    #        ...
-    #    },
-    #    ...
-    #}
-    
-"""
-    scenarios = defaultdict(dict)
-    
-    pattern = re.compile(r"(?P<variable>^[^_]+)(?:_(?P<params>.+))?")
-    
-    for key in datasets.keys():
-        match = pattern.match(key)
-        if match:
-            variable = match.group("variable")
-            params = match.group("params")
-
-            # If there are params, build scenario key
-            if params:
-                scenario = params
-            else:
-                scenario = "base"  # for base scenarios
-
-            scenarios[scenario][variable] = datasets[key]
-
-    return scenarios
-"""
 
 
 # === EXAMPLE USAGE ===
@@ -235,8 +165,6 @@ gams_system_dir = setting_directory(1)  # Example path for Windows
 
 
 
-
-
 from RenewableEnergyLanguageModel.utiles import process_all_results_scenarios
 
 # === Example usage ===
@@ -249,11 +177,11 @@ results_folder = gdx_file + "/Results_dataset_scenarios"  # <<<< your folder wit
 
 merged_feature_arrays = process_all_results_scenarios(scenarios, results_folder)
 
-# Save result (optional)
-for scenario, df in merged_feature_arrays.items():
-    filename = f"{scenario}_features.csv"
-    df.to_csv(filename, index=False)
-    print(f"Saved {filename}")
+## Save result (optional)
+#for scenario, df in merged_feature_arrays.items():
+#    filename = f"{scenario}_features.csv"
+#    df.to_csv(filename, index=False)
+#    print(f"Saved {filename}")
 
 
 ############################################
@@ -371,7 +299,6 @@ print(f"✅ Loaded capFMs for {len(capFMs_dict)} scenarios.")
 
 
 
-
 import pandas as pd
 
 # Initialize lists
@@ -400,47 +327,10 @@ final_feature_array_all = pd.concat(features_all, axis=0).reset_index(drop=True)
 
 
 
-
-
 from RenewableEnergyLanguageModel.random_forest_module import (train_and_predict_capFMs,
                                                     train_and_predict_capFMs_ensemble,
                                                     compute_ensemble_shap)
 
-
-"""
-results_ensemble = train_and_predict_capFMs_ensemble(
-    capFMs_dict["CO2price_0.8_FMsgrowth_0.8_BeechArea0_0.8"],
-    fully_enhanced_arrays["CO2price_0.8_FMsgrowth_0.8_BeechArea0_0.8"], n_folds = 2)
-
-print(f"📈 R² (scaled): {results_ensemble['r2_scaled']:.4f}")
-print(f"📉 RMSE (scaled): {results_ensemble['rmse_scaled']:.4f}")
-print(f"📈 R² (original): {results_ensemble['r2_original']:.4f}")
-print(f"📉 RMSE (original): {results_ensemble['rmse_original']:.2f} hectares")
-
-# Get true and predicted values
-y_pred_original = results_ensemble["y_pred_original"]
-y_test_original = results_ensemble["y_test_original"]
-
-# No single model anymore, it's a list of models
-models = results_ensemble["models"]  
-X_train = results_ensemble["X_train"]
-X_test = results_ensemble["X_test"]
-encoder = results_ensemble["encoder"]
-
-# Visualization: Predicted vs Actual
-import matplotlib.pyplot as plt
-
-plt.figure(figsize=(8, 6))
-plt.scatter(y_test_original, y_pred_original, alpha=0.6, edgecolor='k')
-plt.plot([y_test_original.min(), y_test_original.max()],
-         [y_test_original.min(), y_test_original.max()], 'r--', lw=2)
-plt.xlabel("Actual capFMs (ha)")
-plt.ylabel("Predicted capFMs (ha)")
-plt.title("Predicted vs Actual capFMs (Ensemble Voting)")
-plt.grid(True)
-plt.tight_layout()
-plt.show()
-"""
 
 
 #######################################################
@@ -470,19 +360,77 @@ X_train = results_ensemble["X_train"]
 X_test = results_ensemble["X_test"]
 encoder = results_ensemble["encoder"]
 
+
+"""
 # Visualization: Predicted vs Actual
 import matplotlib.pyplot as plt
 
 plt.figure(figsize=(8, 6))
 plt.scatter(y_test_original, y_pred_original, alpha=0.6, edgecolor='k')
 plt.plot([y_test_original.min(), y_test_original.max()],
-         [y_test_original.min(), y_test_original.max()], 'r--', lw=2)
+         [y_test_original.min(), y_test_original.max()], 'r--', lw=3)
 plt.xlabel("Actual capFMs (ha)")
 plt.ylabel("Predicted capFMs (ha)")
 plt.title("Predicted vs Actual capFMs (Ensemble Voting)")
 plt.grid(True)
 plt.tight_layout()
 plt.show()
+"""
+
+
+
+import matplotlib.pyplot as plt
+
+# Customize font sizes
+title_size = 16
+label_size = 14
+tick_size = 12
+
+# Customize axis representation
+x_min, x_max = y_test_original.min(), y_test_original.max()
+y_min, y_max = y_test_original.min(), y_test_original.max()
+x_scale = "linear"   # options: "linear", "log", "symlog"
+y_scale = "linear"
+
+plt.figure(figsize=(8, 6))
+plt.scatter(y_test_original, y_pred_original, alpha=0.6, edgecolor='k')
+
+# Reference line
+plt.plot([x_min, x_max], [y_min, y_max], 'r--', lw=3)
+
+# Labels and title with font sizes
+plt.xlabel("Actual capFMs (ha)", fontsize=label_size)
+plt.ylabel("Predicted capFMs (ha)", fontsize=label_size)
+plt.title("Predicted vs Actual capFMs (Ensemble Voting)", fontsize=title_size)
+
+# Axis formatting
+plt.xticks(fontsize=tick_size)
+plt.yticks(fontsize=tick_size)
+plt.xscale(x_scale)
+plt.yscale(y_scale)
+plt.xlim(x_min, x_max)
+plt.ylim(y_min, y_max)
+
+plt.grid(True)
+plt.tight_layout()
+
+# Save the figure (change filename and dpi if needed)
+plt.savefig(gams_system_dir + "/RenewableEnergyLanguageModel/plots/" 
+            + "predicted_vs_actual_capFMs_random_forest.png",
+            dpi=600, bbox_inches="tight")
+plt.savefig(gams_system_dir + "/RenewableEnergyLanguageModel/plots/" 
+            + "predicted_vs_actual_capFMs_random_forest.pdf",
+            dpi=600, bbox_inches="tight")
+
+
+plt.show()
+
+
+
+
+
+
+
 
 
 #######################################################
@@ -492,7 +440,7 @@ plt.show()
 import shap
 import numpy as np
 
-sample_size = 2
+sample_size = 20
 n_samples = 10
 
 # Example usage:
@@ -505,8 +453,31 @@ aggregated_shap_values = compute_ensemble_shap(models, X_test, sample_size= samp
 sampled_indices = np.random.choice(X_test.index, size=sample_size, replace=False)
 X_test_sampled = X_test.loc[sampled_indices]
 
-# Now plot the SHAP values for the sampled subset
-shap.summary_plot(aggregated_shap_values, X_test_sampled)
+
+
+
+import matplotlib.pyplot as plt
+
+# Set larger figure size and font
+plt.figure(figsize=(10, 8))   # width=10, height=8 inches
+
+# Create the SHAP summary plot (but don't display immediately)
+shap.summary_plot(
+    aggregated_shap_values, 
+    X_test_sampled, 
+    show=False,            # prevent auto-display
+    plot_size=(10, 8)      # SHAP's internal plot sizing
+)
+
+# Save as high-quality PDF
+plt.savefig(gams_system_dir + "/RenewableEnergyLanguageModel/plots/" 
+            +"shap_summary_capFMs.pdf", format="pdf", bbox_inches="tight", dpi=300)
+
+plt.close()
+
+
+
+
 
 #######################################
 #######################################

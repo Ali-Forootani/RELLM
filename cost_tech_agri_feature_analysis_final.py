@@ -518,7 +518,6 @@ from RenewableEnergyLanguageModel.correlations_module import (plot_scenario_corr
                                                    plot_scenario_dendrogram,
                                                    find_most_and_least_similar_scenarios,
                                                    plot_costTechAgri_correlation,
-                                                   plot_scenario_correlations_better
                                                    )
 
 
@@ -535,15 +534,37 @@ costTechAgri_dict_aliased = replace_dict_keys(costTechAgri_dict, alias_map)
 
 correlation_matrix = plot_scenario_correlations(fully_enhanced_arrays_aliased)
 
-linkage_matrix = plot_scenario_dendrogram(correlation_matrix)
+linkage_matrix = plot_scenario_dendrogram(correlation_matrix, title = "Agriculture Hierarchical Dendrogram",
+ save_path="./plots/Agriculture_input_scenario_dendrogram")
 most_similar, max_corr, least_similar, min_corr = find_most_and_least_similar_scenarios(correlation_matrix)
 
 
 
 correlation_matrix_costTechAgri = plot_costTechAgri_correlation(costTechAgri_dict_aliased)
-linkage_matrix_output = plot_scenario_dendrogram(correlation_matrix_costTechAgri)
+linkage_matrix_output = plot_scenario_dendrogram(correlation_matrix_costTechAgri,  title = "costTechAgri Hierarchical Dendrogram",
+ save_path="./plots/costTechAgri_output_scenario_dendrogram")
 most_similar_costTechAgri, max_corr_cost, least_similar_cost, min_corr_cost = find_most_and_least_similar_scenarios(correlation_matrix_costTechAgri)
 #plot_cost_output_correlation_heatmap(correlation_matrix_capAgri)
+
+from pathlib import Path
+import pandas as pd
+
+
+outdir = Path("./correlation_matrices")
+outdir.mkdir(parents=True, exist_ok=True)
+
+def ensure_df(mat):
+    return mat if isinstance(mat, pd.DataFrame) else pd.DataFrame(mat)
+
+corr_in_df = ensure_df(correlation_matrix)
+corr_out_df = ensure_df(correlation_matrix_costTechAgri)
+
+corr_in_df.to_csv(outdir / "correlation_matrix_inputs_agri.csv", index=True, float_format="%.6f")
+corr_out_df.to_csv(outdir / "correlation_matrix_costTechAgri.csv", index=True, float_format="%.6f")
+
+print(f"Saved CSVs to: {outdir.resolve()}")
+
+
 
 
 
