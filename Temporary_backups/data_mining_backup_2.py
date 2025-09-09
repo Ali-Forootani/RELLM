@@ -138,9 +138,101 @@ csv_directory = os.path.expanduser("~/Documents/Mohammad_Sadr_files/scenarios_ne
 datasets = load_and_rename_csvs(csv_directory)
 
 
+################################################
 
 
+# --- Fix/normalize any frames that didn't get renamed properly ---
+def normalize_dataset(key: str, df: pd.DataFrame) -> pd.DataFrame:
+    # 1) Deduplicate column names (can happen when reading some CSVs)
+    df = df.loc[:, ~df.columns.duplicated()].copy()
 
+    # 2) If "Year" already exists, just coerce numeric and return
+    if "Year" in df.columns:
+        df["Year"] = pd.to_numeric(df["Year"], errors="coerce")
+        return df
+
+    # 3) Heuristic renaming for raw GDX-like headers
+    cols = list(df.columns)
+
+    # Four-column long format: year, tech, region, value
+    if cols == ['*', '*.1', '*.2', 'Value']:
+        df = df.rename(columns={'*': 'Year', '*.1': 'Technology', '*.2': 'Region', 'Value': 'Value'})
+        df["Year"] = pd.to_numeric(df["Year"], errors="coerce")
+        return df
+
+    # Three-column long format: year, region, value  (common for Area0 / targets)
+    if cols == ['*', '*.1', 'Value']:
+        # If this looks like an Area0-type table, call the middle column Region
+        mid_name = 'Region'
+        df = df.rename(columns={'*': 'Year', '*.1': mid_name, 'Value': 'Value'})
+        df["Year"] = pd.to_numeric(df["Year"], errors="coerce")
+        return df
+
+    # Two-column format: region + value (no year) — standardize names
+    if set(cols) == {'*.1', 'Value'} or set(cols) == {'*', 'Value'}:
+        # Choose whichever star column exists as Region
+        region_col = '*.1' if '*.1' in cols else '*'
+        df = df.rename(columns={region_col: 'Region', 'Value': 'Value'})
+        return df
+
+    # Fallback: just return as-is
+    return df
+
+# Apply normalization to all loaded datasets
+fixed = []
+for k in list(datasets.keys()):
+    old_cols = list(datasets[k].columns)
+    datasets[k] = normalize_dataset(k, datasets[k])
+    if old_cols != list(datasets[k].columns):
+        fixed.append((k, old_cols, list(datasets[k].columns)))
+
+# Optional: print what was auto-fixed
+if fixed:
+    print("Auto-normalized the following datasets (old -> new columns):")
+    for k, old, new in fixed:
+        print(f"  - {k}: {old}  ->  {new}")
+
+# --- Make the plotting loop resilient to unexpected column names ---
+for key, df in datasets.items():
+    if key in ["BeechArea0", "GrassArea0"]:
+        continue
+
+    plt.figure(figsize=(14, 8))
+
+    # Determine a sensible Y column (prefer last numeric)
+    numeric_cols = [c for c in df.columns if pd.api.types.is_numeric_dtype(df[c])]
+    if len(numeric_cols) == 0:
+        print(f"[Skip] No numeric columns to plot for {key}. Columns: {df.columns.tolist()}")
+        plt.close()
+        continue
+    y_col = numeric_cols[-1]  # last numeric column is typically the "Value"
+
+    # Ensure Year exists (after normalization it should; otherwise skip)
+    if "Year" not in df.columns:
+        print(f"[Skip] No 'Year' column in {key} even after normalization. Columns: {df.columns.tolist()}")
+        plt.close()
+        continue
+
+    # Coerce Year numeric (idempotent)
+    df["Year"] = pd.to_numeric(df["Year"], errors="coerce")
+
+    if "Region" in df.columns and "Technology" in df.columns:
+        sns.lineplot(data=df, x="Year", y=y_col, hue="Region", style="Technology", markers=True, dashes=False)
+        plt.legend(title="Region/Technology", bbox_to_anchor=(1.05, 1), loc='upper left')
+
+    elif "Region" in df.columns:
+        sns.lineplot(data=df, x="Year", y=y_col, hue="Region", markers=True)
+        plt.legend(title="Region", bbox_to_anchor=(1.05, 1), loc='upper left')
+
+    else:
+        sns.lineplot(data=df, x="Year", y=y_col, marker="o")
+
+    plt.xlabel("Year")
+    plt.ylabel(y_col)
+    plt.title(f"{key} Evolution Over Time")
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
 
 
 

@@ -13,8 +13,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 from pyomo.environ import *
-from gams import GamsWorkspace, GamsParameter, GamsSet
-from gams import GamsWorkspace
+#from gams import GamsWorkspace, GamsParameter, GamsSet
+#from gams import GamsWorkspace
 import os
 
 import sys
@@ -43,12 +43,6 @@ gams_system_dir = setting_directory(0)  # Example path for Windows
 gdx_file_base = gams_system_dir + "/scenarios_neg_emi/CarbonPrice/Data/test_Ali.gdx"  # Change this to the actual path of your GDX file
 
 
-"""
-gdx_co2 = gams_system_dir + "/scenarios_neg_emi/CarbonPrice/Data/ali_carbonPrice_2times.gdx"
-gdx_co2_3 = gams_system_dir + "/scenarios_neg_emi/CarbonPrice/Data/ali_carbonPrice_3times.gdx"
-gdx_co2_05 = gams_system_dir + "/scenarios_neg_emi/CarbonPrice/Data/ali_carbonPrice_halftimes.gdx"
-"""
-
 
 gdx_base_ali = gams_system_dir + "/test_Ali.gdx"
 
@@ -61,18 +55,6 @@ gdx_data = gdxpds.to_dataframes(gdx_file_base)
 
 
 
-"""
-gdx_co2_data = gdxpds.to_dataframes(gdx_co2)
-gdx_co2_3_data = gdxpds.to_dataframes(gdx_co2_3)
-gdx_co2_05_data = gdxpds.to_dataframes(gdx_co2_05)
-"""
-
-
-#gdx_base_data = gdxpds.to_dataframes(gdx_base_ali)
-
-#gdx_base_data.keys() 
-
-
 
 ###########################
 ###########################
@@ -82,9 +64,10 @@ gdx_co2_05_data = gdxpds.to_dataframes(gdx_co2_05)
 from Temporary_backups.loading_saving_parms_from_gdx_csv import load_and_save_selected_symbols
 
 
+
 gdx_dir = os.path.expanduser("~/Documents/Mohammad_Sadr_files/scenarios_neg_emi/dataset_scenarios")
 save_dir = os.path.expanduser("~/Documents/Mohammad_Sadr_files/scenarios_neg_emi/csv_outputs")
-target_symbols = ["CO2price", "FMsgrowth", "BeechArea0", "ghgTargetLULUCF"]
+target_symbols = ["CO2price", "FMsgrowth", "BeechArea0", "ghgTargetLULUCF", "costInvLevelFMs"]
 
 load_and_save_selected_symbols(gdx_dir, target_symbols, save_path=save_dir)
 
@@ -153,6 +136,104 @@ from Temporary_backups.utiles import load_and_rename_csvs, get_dynamic_rename_ma
 csv_directory = os.path.expanduser("~/Documents/Mohammad_Sadr_files/scenarios_neg_emi/csv_outputs")
 
 datasets = load_and_rename_csvs(csv_directory)
+
+
+################################################
+
+
+# --- Fix/normalize any frames that didn't get renamed properly ---
+def normalize_dataset(key: str, df: pd.DataFrame) -> pd.DataFrame:
+    # 1) Deduplicate column names (can happen when reading some CSVs)
+    df = df.loc[:, ~df.columns.duplicated()].copy()
+
+    # 2) If "Year" already exists, just coerce numeric and return
+    if "Year" in df.columns:
+        df["Year"] = pd.to_numeric(df["Year"], errors="coerce")
+        return df
+
+    # 3) Heuristic renaming for raw GDX-like headers
+    cols = list(df.columns)
+
+    # Four-column long format: year, tech, region, value
+    if cols == ['*', '*.1', '*.2', 'Value']:
+        df = df.rename(columns={'*': 'Year', '*.1': 'Technology', '*.2': 'Region', 'Value': 'Value'})
+        df["Year"] = pd.to_numeric(df["Year"], errors="coerce")
+        return df
+
+    # Three-column long format: year, region, value  (common for Area0 / targets)
+    if cols == ['*', '*.1', 'Value']:
+        # If this looks like an Area0-type table, call the middle column Region
+        mid_name = 'Region'
+        df = df.rename(columns={'*': 'Year', '*.1': mid_name, 'Value': 'Value'})
+        df["Year"] = pd.to_numeric(df["Year"], errors="coerce")
+        return df
+
+    # Two-column format: region + value (no year) — standardize names
+    if set(cols) == {'*.1', 'Value'} or set(cols) == {'*', 'Value'}:
+        # Choose whichever star column exists as Region
+        region_col = '*.1' if '*.1' in cols else '*'
+        df = df.rename(columns={region_col: 'Region', 'Value': 'Value'})
+        return df
+
+    # Fallback: just return as-is
+    return df
+
+# Apply normalization to all loaded datasets
+fixed = []
+for k in list(datasets.keys()):
+    old_cols = list(datasets[k].columns)
+    datasets[k] = normalize_dataset(k, datasets[k])
+    if old_cols != list(datasets[k].columns):
+        fixed.append((k, old_cols, list(datasets[k].columns)))
+
+# Optional: print what was auto-fixed
+if fixed:
+    print("Auto-normalized the following datasets (old -> new columns):")
+    for k, old, new in fixed:
+        print(f"  - {k}: {old}  ->  {new}")
+
+# --- Make the plotting loop resilient to unexpected column names ---
+for key, df in datasets.items():
+    if key in ["BeechArea0", "GrassArea0"]:
+        continue
+
+    plt.figure(figsize=(14, 8))
+
+    # Determine a sensible Y column (prefer last numeric)
+    numeric_cols = [c for c in df.columns if pd.api.types.is_numeric_dtype(df[c])]
+    if len(numeric_cols) == 0:
+        print(f"[Skip] No numeric columns to plot for {key}. Columns: {df.columns.tolist()}")
+        plt.close()
+        continue
+    y_col = numeric_cols[-1]  # last numeric column is typically the "Value"
+
+    # Ensure Year exists (after normalization it should; otherwise skip)
+    if "Year" not in df.columns:
+        print(f"[Skip] No 'Year' column in {key} even after normalization. Columns: {df.columns.tolist()}")
+        plt.close()
+        continue
+
+    # Coerce Year numeric (idempotent)
+    df["Year"] = pd.to_numeric(df["Year"], errors="coerce")
+
+    if "Region" in df.columns and "Technology" in df.columns:
+        sns.lineplot(data=df, x="Year", y=y_col, hue="Region", style="Technology", markers=True, dashes=False)
+        plt.legend(title="Region/Technology", bbox_to_anchor=(1.05, 1), loc='upper left')
+
+    elif "Region" in df.columns:
+        sns.lineplot(data=df, x="Year", y=y_col, hue="Region", markers=True)
+        plt.legend(title="Region", bbox_to_anchor=(1.05, 1), loc='upper left')
+
+    else:
+        sns.lineplot(data=df, x="Year", y=y_col, marker="o")
+
+    plt.xlabel("Year")
+    plt.ylabel(y_col)
+    plt.title(f"{key} Evolution Over Time")
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
+
 
 
 ################################################
@@ -235,10 +316,6 @@ for key, df in datasets.items():
 ############################################
 ############################################
 ############################################
-############################################
-############################################
-############################################
-
 
 
 import pandas as pd
@@ -276,6 +353,24 @@ CO2price_08_10_10 = datasets["CO2price_df_sce_08_10_10"]
 
 
 
+FMsgrowth_12_12_12 = datasets["FMsgrowth_df_sce_12_12_12"]
+BeechArea0_12_12_12 = datasets["BeechArea0_df_sce_12_12_12"]
+CO2price_12_12_12 = datasets["CO2price_df_sce_12_12_12"]
+
+
+
+
+FMsgrowth_12_10_12 = datasets["FMsgrowth_df_sce_12_10_12"]
+BeechArea0_12_10_12 = datasets["BeechArea0_df_sce_12_10_12"]
+CO2price_12_10_12 = datasets["CO2price_df_sce_12_10_12"]
+
+
+
+FMsgrowth_12_12 = datasets["FMsgrowth_df_sce_12_12"]
+BeechArea0_12_12 = datasets["BeechArea0_df_sce_12_12"]
+CO2price_12_12 = datasets["CO2price_df_sce_12_12"]
+
+costInvLevelFMs_12_12 = datasets["costInvLevelFMs_df_sce_12_12"]
 
 
 
@@ -287,7 +382,7 @@ costInvLevel_features = compute_trend(costInvLevelFMs, "InvestmentLevelCost", "C
 ghg_features = compute_trend(ghgFMs, "GHG_Removal", "GHG")
 growth_features = compute_trend(FMsgrowth, "ForestManagementGrowth", "ForestGrowth")
 
-
+costInvLevel_12_12_features = compute_trend(costInvLevelFMs_12_12, "InvestmentLevelCost", "CostInvLevel")
 
 
 # Merge all datasets on both "Region" and "Technology"
@@ -309,6 +404,17 @@ final_feature_array_12_12_08 = final_feature_array.copy()
 final_feature_array_08_10_08 = final_feature_array.copy()
 final_feature_array_08_10_10 = final_feature_array.copy()
 
+final_feature_array_12_12_12 = final_feature_array.copy()
+
+final_feature_array_12_10_12 = final_feature_array.copy()
+
+
+
+# Merge all datasets on both "Region" and "Technology"
+final_feature_array_12_12 = costMarg_features.merge(costInv_features, on=["Region", "Technology"], how="outer") \
+                                       .merge(costInvLevel_12_12_features, on=["Region", "Technology"], how="outer") \
+                                       .merge(ghg_features, on=["Region", "Technology"], how="outer") \
+                                       .merge(growth_features, on=["Region", "Technology"], how="outer")
 
 
 
@@ -332,10 +438,16 @@ ghgTargetLULUCF_08_08_08 = datasets["ghgTargetLULUCF_df_sce_08_08_08"]
 
 ghgTargetLULUCF_12_12_08 = datasets["ghgTargetLULUCF_df_sce_12_12_08"] 
 
-
 ghgTargetLULUCF_08_10_08 = datasets["ghgTargetLULUCF_df_sce_08_10_08"] 
 
-ghgTargetLULUCF_08_10_10 = datasets["ghgTargetLULUCF_df_sce_08_10_10"] 
+ghgTargetLULUCF_08_10_10 = datasets["ghgTargetLULUCF_df_sce_08_10_10"]
+
+ghgTargetLULUCF_12_12_12 = datasets["ghgTargetLULUCF_df_sce_12_12_12"] 
+
+ghgTargetLULUCF_12_10_12 = datasets["ghgTargetLULUCF_df_sce_12_10_12"] 
+
+ghgTargetLULUCF_12_12 = datasets["ghgTargetLULUCF_df_sce_12_12"] 
+
 
 
 
@@ -353,6 +465,10 @@ co2_12_12_08_features = compute_global_trend(CO2price_12_12_08, "Year", "CO2_Pri
 co2_08_10_08_features = compute_global_trend(CO2price_08_10_08, "Year", "CO2_Price", "CO2")
 co2_08_10_10_features = compute_global_trend(CO2price_08_10_10, "Year", "CO2_Price", "CO2")
 
+co2_12_12_12_features = compute_global_trend(CO2price_12_12_12, "Year", "CO2_Price", "CO2")
+co2_12_10_12_features = compute_global_trend(CO2price_12_10_12, "Year", "CO2_Price", "CO2")
+
+co2_12_12_features = compute_global_trend(CO2price_12_12, "Year", "CO2_Price", "CO2")
 
 
 ghg_target_features = compute_global_trend(ghgTargetLULUCF, "Year", "GHG_Target_LULUCF", "GHGTarget")
@@ -383,6 +499,24 @@ ghg_target_features_08_10_10 = compute_global_trend(ghgTargetLULUCF_08_10_10, "Y
 
 
 
+ghgTargetLULUCF_12_12_12["Year"] = pd.to_numeric(ghgTargetLULUCF_12_12_12["Year"], errors="coerce")
+ghgTargetLULUCF_12_12_12["GHG_Target_LULUCF"] = pd.to_numeric(ghgTargetLULUCF_12_12_12["GHG_Target_LULUCF"], errors="coerce")
+ghg_target_features_12_12_12 = compute_global_trend(ghgTargetLULUCF_12_12_12, "Year", "GHG_Target_LULUCF", "GHGTarget")
+
+
+
+ghgTargetLULUCF_12_10_12["Year"] = pd.to_numeric(ghgTargetLULUCF_12_10_12["Year"], errors="coerce")
+ghgTargetLULUCF_12_10_12["GHG_Target_LULUCF"] = pd.to_numeric(ghgTargetLULUCF_12_10_12["GHG_Target_LULUCF"], errors="coerce")
+ghg_target_features_12_10_12 = compute_global_trend(ghgTargetLULUCF_12_10_12, "Year", "GHG_Target_LULUCF", "GHGTarget")
+
+
+
+ghgTargetLULUCF_12_12["Year"] = pd.to_numeric(ghgTargetLULUCF_12_12["Year"], errors="coerce")
+ghgTargetLULUCF_12_12["GHG_Target_LULUCF"] = pd.to_numeric(ghgTargetLULUCF_12_12["GHG_Target_LULUCF"], errors="coerce")
+ghg_target_features_12_12 = compute_global_trend(ghgTargetLULUCF_12_12, "Year", "GHG_Target_LULUCF", "GHGTarget")
+
+
+
 
 
 
@@ -401,6 +535,12 @@ broadcast_df_12_12_08 = pd.DataFrame(unique_regions, columns=["Region"])
 broadcast_df_08_10_08 = pd.DataFrame(unique_regions, columns=["Region"])
 broadcast_df_08_10_10 = pd.DataFrame(unique_regions, columns=["Region"])
 
+
+broadcast_df_12_12_12 = pd.DataFrame(unique_regions, columns=["Region"])
+broadcast_df_12_10_12 = pd.DataFrame(unique_regions, columns=["Region"])
+
+
+broadcast_df_12_12 = pd.DataFrame(unique_regions, columns=["Region"])
 
 
 # Cross join with co2 and ghg features (same values for all regions)
@@ -429,7 +569,17 @@ broadcast_df_08_10_10 = broadcast_df_08_10_10.merge(ghg_target_features_08_10_10
 
 
 
+broadcast_df_12_12_12 = broadcast_df_12_12_12.merge(co2_12_12_12_features, how="cross")
+broadcast_df_12_12_12 = broadcast_df_12_12_12.merge(ghg_target_features_12_12_12, how="cross")
 
+
+broadcast_df_12_10_12 = broadcast_df_12_10_12.merge(co2_12_10_12_features, how="cross")
+broadcast_df_12_10_12 = broadcast_df_12_10_12.merge(ghg_target_features_12_10_12, how="cross")
+
+
+
+broadcast_df_12_12 = broadcast_df_12_12.merge(co2_12_12_features, how="cross")
+broadcast_df_12_12 = broadcast_df_12_12.merge(ghg_target_features_12_12, how="cross")
 
 
 # Merge with final_feature_array
@@ -451,6 +601,22 @@ final_feature_array_08_10_08 = final_feature_array_08_10_08.merge(broadcast_df_0
 
 # Merge with final_feature_array _08 10 10
 final_feature_array_08_10_10 = final_feature_array_08_10_10.merge(broadcast_df_08_10_10, on="Region", how="left")
+
+
+
+# Merge with final_feature_array 12_12_12
+final_feature_array_12_12_12 = final_feature_array_12_12_12.merge(broadcast_df_12_12_12, on="Region", how="left")
+
+
+# Merge with final_feature_array 12_10_12
+final_feature_array_12_10_12 = final_feature_array_12_10_12.merge(broadcast_df_12_10_12, on="Region", how="left")
+
+
+
+# Merge with final_feature_array 12_12
+final_feature_array_12_12 = final_feature_array_12_12.merge(broadcast_df_12_12, on="Region", how="left")
+
+
 
 
 #####################################
@@ -477,6 +643,26 @@ GrassArea0_08_10_08 = datasets["GrassArea0"]
 
 BeechArea0_08_10_10 = datasets["BeechArea0_df_sce_08_10_10"]
 GrassArea0_08_10_10 = datasets["GrassArea0"]
+
+
+
+BeechArea0_12_12_12 = datasets["BeechArea0_df_sce_12_12_12"]
+GrassArea0_12_12_12 = datasets["GrassArea0"]
+
+
+BeechArea0_12_10_12 = datasets["BeechArea0_df_sce_12_10_12"]
+GrassArea0_12_10_12 = datasets["GrassArea0"]
+
+
+BeechArea0_12_12 = datasets["BeechArea0"]
+GrassArea0_12_12 = datasets["GrassArea0"]
+
+
+
+
+
+
+
 
 
 # Drop the "Year" column (not needed) and merge region-wise into final_feature_array
@@ -528,6 +714,32 @@ final_feature_array_08_10_10 = final_feature_array_08_10_10.merge(
 
 
 
+# Drop the "Year" column (not needed) and merge region-wise into final_feature_array
+final_feature_array_12_12_12 = final_feature_array_12_12_12.merge(
+    BeechArea0_12_12_12.drop(columns=["Year"]), on="Region", how="left")
+
+
+final_feature_array_12_12_12 = final_feature_array_12_12_12.merge(
+    GrassArea0_12_12_12.drop(columns=["Year"]), on="Region", how="left")
+
+
+# Drop the "Year" column (not needed) and merge region-wise into final_feature_array
+final_feature_array_12_10_12 = final_feature_array_12_10_12.merge(
+    BeechArea0_12_10_12.drop(columns=["Year"]), on="Region", how="left")
+
+
+final_feature_array_12_10_12 = final_feature_array_12_10_12.merge(
+    GrassArea0_12_10_12.drop(columns=["Year"]), on="Region", how="left")
+
+
+# Drop the "Year" column (not needed) and merge region-wise into final_feature_array
+final_feature_array_12_12 = final_feature_array_12_12.merge(
+    BeechArea0_12_12.drop(columns=["Year"]), on="Region", how="left")
+
+
+final_feature_array_12_12 = final_feature_array_12_12.merge(
+    GrassArea0_12_12.drop(columns=["Year"]), on="Region", how="left")
+
 
 #############################
 #############################
@@ -571,13 +783,15 @@ final_feature_array_combined_1_5 = pd.concat([
 
 
 
-final_feature_array_combined = pd.concat(
+final_feature_array_combined_total = pd.concat(
                                 [ final_feature_array,
                                 final_feature_array_08_08_08,
                                 final_feature_array_08_10_08,
                                 final_feature_array_08_10_10,
-                                #final_feature_array_co2_05times,
-                                final_feature_array_12_12_08
+                                final_feature_array_12_12_08,
+                                final_feature_array_12_10_12,
+                                final_feature_array_12_12_12,
+                                final_feature_array_12_12
                                 ],
                                ignore_index=True)
 
@@ -586,12 +800,9 @@ final_feature_array_combined = pd.concat(
 # ---- Apply Min-Max Scaling ----
 scaler = MinMaxScaler()
 columns_to_scale = [col for col in final_feature_array.columns if col not in ["Region", "Technology"]]
-final_feature_array[columns_to_scale] = scaler.fit_transform(final_feature_array[columns_to_scale])
 
 
 
-
-columns_to_scale = [col for col in final_feature_array_combined.columns if col not in ["Region", "Technology"]]
 
 final_feature_array_combined_1_2[columns_to_scale] = scaler.fit_transform(final_feature_array_combined_1_2[columns_to_scale])
 
@@ -601,7 +812,10 @@ final_feature_array_combined_1_4[columns_to_scale] = scaler.fit_transform(final_
 
 final_feature_array_combined_1_5[columns_to_scale] = scaler.fit_transform(final_feature_array_combined_1_5[columns_to_scale])
 
-final_feature_array_combined = scaler.fit_transform(final_feature_array_combined[columns_to_scale])
+
+
+# Correct way (keeps it as DataFrame ✅)
+final_feature_array_combined_total[columns_to_scale] = scaler.fit_transform(final_feature_array_combined_total[columns_to_scale])
 
 
 ############################################
@@ -625,9 +839,6 @@ from Temporary_backups.gdx_to_csv_function import extract_gdx_results
 
 
 
-"""
-SHOULD BE refined from here
-"""
 
 
 # Load the .gdx file
@@ -670,6 +881,29 @@ extract_gdx_results(gdx_file, output_dir_08_10_10, sub_dir= "Results_08_10_10" )
 
 
 
+gdx_file = gams_system_dir + "/scenarios_neg_emi/Results_dataset_scenarios/Results_CO2price_1.2_FMsgrowth_1.2_BeechArea0_1.2.gdx" 
+output_dir_12_12_12 = gams_system_dir + "/Temporary_backups/data"
+extract_gdx_results(gdx_file, output_dir_12_12_12, sub_dir= "Results_12_12_12" )
+
+
+
+
+gdx_file = gams_system_dir + "/scenarios_neg_emi/Results_dataset_scenarios/Results_CO2price_1.2_FMsgrowth_1.0_BeechArea0_1.2.gdx" 
+output_dir_12_10_12 = gams_system_dir + "/Temporary_backups/data"
+extract_gdx_results(gdx_file, output_dir_12_10_12, sub_dir= "Results_12_10_12" )
+
+
+
+gdx_file = gams_system_dir + "/scenarios_neg_emi/Results_dataset_scenarios/Results_FMsgrowth_1.2_costInvLevelFMs_1.2.gdx" 
+output_dir_12_12 = gams_system_dir + "/Temporary_backups/data"
+extract_gdx_results(gdx_file, output_dir_12_12, sub_dir= "Results_12_12" )
+
+
+
+
+
+
+
 df_capFMs_08_08_08 = pd.read_csv(output_dir_08_08_08 + "/Results_08_08_08" + "/capFMs_results.csv")
 df_capFMs_12_12_08 = pd.read_csv(output_dir_12_12_08 + "/Results_12_12_08" + "/capFMs_results.csv")
 
@@ -679,6 +913,11 @@ df_capFMs_08_10_08 = pd.read_csv(output_dir_08_10_08 + "/Results_08_10_08" + "/c
 df_capFMs_08_10_10 = pd.read_csv(output_dir_08_10_10 + "/Results_08_10_10" + "/capFMs_results.csv")
 
 
+df_capFMs_12_12_12 = pd.read_csv(output_dir_12_12_12 + "/Results_12_12_12" + "/capFMs_results.csv")
+df_capFMs_12_10_12 = pd.read_csv(output_dir_12_10_12 + "/Results_12_10_12" + "/capFMs_results.csv")
+
+
+df_capFMs_12_12 = pd.read_csv(output_dir_12_12 + "/Results_12_12" + "/capFMs_results.csv")
 
 
 # Load extracted CSV data
@@ -713,12 +952,15 @@ df_capFMs_combined_1_5 = pd.concat([
 
 
 
-df_capFMs_combined = pd.concat([
+df_capFMs_combined_total = pd.concat([
                                 df_capFMs,
                                 df_capFMs_08_08_08,
                                 df_capFMs_08_10_08,
                                 df_capFMs_08_10_10,
                                 df_capFMs_12_12_08,
+                                df_capFMs_12_10_12,
+                                df_capFMs_12_12_12,
+                                df_capFMs_12_12
                                 ], ignore_index=True)
 
 
@@ -740,7 +982,9 @@ final_feature_array_combined = pd.concat(
 #######################################################
 
 
-from Temporary_backups.random_forest_module import train_and_predict_capFMs, train_and_predict_capFMs_ensemble
+from Temporary_backups.random_forest_module import (train_and_predict_capFMs,
+                                                    train_and_predict_capFMs_ensemble,
+                                                    compute_ensemble_shap)
 
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
@@ -863,7 +1107,7 @@ y_pred_original = results_1_5["y_pred_original"]
 y_test_original = results_1_5["y_test_original"]
 
 model = results_1_5["model"]
-X_train = results_1_5["X_train"]
+X_train_1_5 = results_1_5["X_train"]
 X_test = results_1_5["X_test"]
 encoder = results_1_5["encoder"]
 
@@ -884,7 +1128,8 @@ plt.show()
 
 
 
-results = train_and_predict_capFMs_ensemble(df_capFMs_combined, final_feature_array_combined, n_folds=5)
+results_ensemble = train_and_predict_capFMs_ensemble(df_capFMs_combined_total,
+                                                     final_feature_array_combined_total, n_folds=8)
 
 print(f"📈 R² (scaled): {results_ensemble['r2_scaled']:.4f}")
 print(f"📉 RMSE (scaled): {results_ensemble['rmse_scaled']:.4f}")
@@ -916,8 +1161,218 @@ plt.tight_layout()
 plt.show()
 
 
+#######################################
+#######################################
+#######################################
 
 
+import shap
+
+
+sample_size = 20
+
+n_samples = 100
+
+# Example usage:
+aggregated_shap_values = compute_ensemble_shap(models, X_test, sample_size= sample_size, n_samples= n_samples)
+
+# Visualize the aggregated SHAP values (summary plot)
+#shap.summary_plot(aggregated_shap_values, X_test)
+
+# Randomly sample the same subset of X_test that was used for SHAP calculations
+sampled_indices = np.random.choice(X_test.index, size=sample_size, replace=False)
+X_test_sampled = X_test.loc[sampled_indices]
+
+# Now plot the SHAP values for the sampled subset
+shap.summary_plot(aggregated_shap_values, X_test_sampled)
+
+
+#######################################
+#######################################
+#######################################
+
+import shap
+import pandas as pd
+import numpy as np
+
+# Assuming `aggregated_shap_values` is a numpy.ndarray containing the SHAP values for the model (or ensemble)
+# `X_test` is the feature set used to generate the SHAP values
+
+# Get the absolute SHAP values to sort features by importance
+shap_values_abs = np.abs(aggregated_shap_values)
+
+# Sum the absolute SHAP values for each feature (this gives the overall importance)
+feature_importance = shap_values_abs.mean(axis=0)
+
+# Get feature names (assuming `X_test` has column names)
+feature_names = X_test.columns
+
+# Create a DataFrame to store feature importance and feature names
+shap_df = pd.DataFrame({
+    'Feature': feature_names,
+    'SHAP Value (mean abs)': feature_importance
+})
+
+# Sort by the highest absolute SHAP values (importance)
+shap_df_sorted = shap_df.sort_values(by='SHAP Value (mean abs)', ascending=False)
+
+# Extract the top N features
+top_n = 3  # Change to the number of top features you want
+top_features = shap_df_sorted.head(top_n)
+
+print(top_features)
+
+
+
+#######################################
+#######################################
+#######################################
+# Assuming top_features is a DataFrame containing the top features
+top_features = shap_df_sorted.head(top_n)
+
+# Extract the top feature names and SHAP values for the prompt
+top_feature_names = top_features['Feature'].tolist()
+top_shap_vals = top_features['SHAP Value (mean abs)'].tolist()
+top_feature_vals = [X_test[feature].mean() for feature in top_feature_names]
+
+# Group by 'r' (region) and 'techFMs' (technology), and calculate the mean of 'capFMs' for each combination
+region_capFMs = df_capFMs_combined_total.groupby('r')['capFMs'].mean().reset_index()
+tech_capFMs = df_capFMs_combined_total.groupby('techFMs')['capFMs'].mean().reset_index()
+
+# Find the region with the highest average capFMs
+best_region_row = region_capFMs.loc[region_capFMs['capFMs'].idxmax()]
+best_region = best_region_row['r']
+
+# Find the technology with the highest average capFMs
+best_tech_row = tech_capFMs.loc[tech_capFMs['capFMs'].idxmax()]
+best_tech = best_tech_row['techFMs']
+
+# Now use these variables in your prompt
+prompt = f"""
+You are a sustainability analyst preparing a summary report for stakeholders, based on a machine learning ensemble model and SHAP analysis focused on forest management capacity (`capFMs`).
+
+🎯 **Objective**: Predict and understand the key drivers of forest management capacity (`capFMs`)
+
+📊 **Model Performance**:  
+• R² Score: {results_ensemble['r2_original']:.4f}  
+• RMSE: {results_ensemble['rmse_original']:.2f} hectares
+
+🔍 **Top 3 Influential Features (from SHAP analysis across ensemble models)**:  
+1. **{top_feature_names[0]}** – SHAP = {top_shap_vals[0]:.3f}, Avg value = {top_feature_vals[0]:.3f}  
+2. **{top_feature_names[1]}** – SHAP = {top_shap_vals[1]:.3f}, Avg value = {top_feature_vals[1]:.3f}  
+3. **{top_feature_names[2]}** – SHAP = {top_shap_vals[2]:.3f}, Avg value = {top_feature_vals[2]:.3f}
+
+🌍 **Regional & Policy Highlights**:  
+• Region with highest capFMs potential: **{best_region}**  
+• Leading growth technology: **{best_tech}**  
+
+
+✏️ **Task**:  
+Craft a clear and professional report that:
+- Summarizes the ensemble model's performance in non-technical terms  
+- Interprets how the top 3 features influence capFMs outcomes across the ensemble models  
+- Highlights regional and technological opportunities  
+- Recommends actions that align with long-term decarbonization goals  
+
+The tone should be insight-driven, stakeholder-friendly, and suitable for regional planners, policymakers, and sustainability investors. Avoid equations or technical jargon—focus on actionable insights.
+"""
+
+
+
+import os
+from openai import OpenAI
+
+
+# Set OpenAI API key and base URL
+os.environ["OPENAI_API_KEY"] = "glpat-JHd9xWcVcu2NY76LAK_A"
+os.environ["OPENAI_API_BASE"] = "https://helmholtz-blablador.fz-juelich.de:8000/v1"
+
+api_key = "glpat-JHd9xWcVcu2NY76LAK_A"
+api_base = "https://helmholtz-blablador.fz-juelich.de:8000/v1"
+
+# Initialize the OpenAI client
+client = OpenAI(api_key=api_key, base_url=api_base)
+
+
+response = client.chat.completions.create(
+    model="gpt-3.5-turbo",
+    messages=[
+        {
+            "role": "system",
+            "content": "You are a helpful assistant skilled in climate dataset analysis.",
+        },
+        {"role": "user", "content": prompt},
+    ],
+)
+
+# -----------------------------
+# 6) Print the response
+# -----------------------------
+print("OpenAI Response:")
+print(response.choices[0].message.content)
+
+
+
+
+
+
+
+#######################################
+#######################################
+#######################################
+
+
+
+
+#######################################
+#######################################
+#######################################
+
+"""
+import shap
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Pick one model from ensemble (say the first one)
+model_for_shap = results_ensemble["models"][0]  # You can choose another one if you prefer
+X_test = results_ensemble["X_test"]
+
+# Create SHAP Explainer
+explainer_shap = shap.TreeExplainer(model_for_shap)
+
+# Compute SHAP values
+shap_values = explainer_shap.shap_values(X_test)
+
+# 1. Global Feature Importance (Summary Plot)
+shap.summary_plot(shap_values, X_test)
+
+# 2. Analyze a single prediction
+i = 4  # Pick a sample index from X_test
+shap_row = shap_values[i]
+input_row = X_test.iloc[i]
+
+# Top 3 important features for this sample
+top_indices = np.argsort(np.abs(shap_row))[-3:][::-1]
+
+print("\nTop 3 features for sample {}:".format(i))
+for idx in top_indices:
+    feature_name = X_test.columns[idx]
+    shap_val = shap_row[idx]
+    feature_val = input_row[feature_name]
+    print(f" - {feature_name}: SHAP = {shap_val:.4f}, Value = {feature_val}")
+
+# 3. Global top 3 important features across all test samples
+mean_abs_shap = np.abs(shap_values).mean(axis=0)
+top_indices = np.argsort(mean_abs_shap)[-3:][::-1]
+
+top_features = [X_test.columns[i] for i in top_indices]
+top_shap_vals = [mean_abs_shap[i] for i in top_indices]
+top_feature_vals = [X_test.iloc[:, i].mean() for i in top_indices]
+
+print("\nTop 3 global important features:")
+for feature, shap_val, mean_val in zip(top_features, top_shap_vals, top_feature_vals):
+    print(f" - {feature}: Mean SHAP = {shap_val:.4f}, Mean Value = {mean_val:.4f}")
+"""
 
 
 #######################################
