@@ -101,6 +101,7 @@ pip install pandas numpy scikit-learn xgboost matplotlib seaborn gdxpds openai
 
 ## 📂 Data & paths
 
+* **You should download the GAMS .gdx scenarios** from Ali, F. (2025). GAMS scenario simulations for integrating Large Language Models into Renewable Energy Systems [Data set]. Zenodo. https://doi.org/10.5281/zenodo.17077632 
 * **Input GDX**: `scenarios_neg_emi/base_scenario.gdx`
 * **Scenario results (GDX)**: `scenarios_neg_emi/Results_dataset_scenarios/Results_<SUFFIX>.gdx`
 * **Extracted CSVs (inputs)**: `scenarios_neg_emi/csv_outputs/`
